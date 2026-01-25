@@ -5,7 +5,7 @@
 #                                                                              #
 #------------------------------------------------------------------------------#
 cmake_minimum_required(VERSION 4.0.2)
-project(hello_world_lib LANGUAGES C) # <== Name your software project
+project(runtime_diagnostics_project LANGUAGES C) # <== Name your software project
 
 include(FetchContent)
 
@@ -19,4 +19,4 @@ include(FetchContent)
 # FetchContent_MakeAvailable(print_hello_world)
 
 # \/=== Add all interface directories (each w/ a CMakeLists.txt)
-add_subdirectory(hello_world)
+add_subdirectory(runtime_diagnostics)
