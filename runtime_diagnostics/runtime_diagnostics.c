@@ -53,13 +53,6 @@ static void clear_all_logs(void)
     memset(error_log, 0, sizeof(error_log));
 }
 
-static struct log_entry create_log_entry(uint32_t timestamp,
-    const char *file_identifier, uint16_t line)
-{
-    struct log_entry new_entry = {timestamp, file_identifier, line};
-    return new_entry;
-}
-
 static void add_entry_to_log(enum log_array_index log_index, 
     struct log_entry new_entry)
 {
@@ -94,6 +87,13 @@ struct log_entry *get_warning_log(void)
 struct log_entry *get_error_log(void)
 {
     return error_log;
+}
+
+struct log_entry create_log_entry(uint32_t timestamp,
+    const char *file_identifier, uint16_t line)
+{
+    struct log_entry new_entry = {timestamp, file_identifier, line};
+    return new_entry;
 }
 
 void add_entry_to_telemetry_log(uint32_t timestamp,
