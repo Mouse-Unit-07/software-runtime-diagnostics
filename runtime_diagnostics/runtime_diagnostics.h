@@ -33,6 +33,16 @@ enum
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
+/*
+...The parameters in below functions are begging to be swapped out for a 
+single log_entry, but we can't do so because:
+  - We want preprocessor macro wrappers to sprinkle __FILE__ and __LINE__
+  - A macro that takes a struct as a param is hard to use
+  - Macro needs to dynamically create a struct w/ params to pass to function
+  - Preprocessor macros expand in both C production and C++ test source files,
+     and there's no uniform way to dynamically create a struct in both C/C++
+  - ...4 parameters is horrible, but can't avoid it w/o roundabout logic
+*/
 void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, 
     uint16_t line, uint16_t runtime_diagnostic_identifier);
 void add_entry_to_warning_log(uint32_t timestamp, const char *file, 
