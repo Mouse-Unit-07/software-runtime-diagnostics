@@ -24,6 +24,9 @@ enum
     ERROR_LOG_CAPACITY = 10
 };
 
+#define ADD_RUNTIME_TELEMETRY(timestamp, runtime_diagnostic_identifier) \
+    add_entry_to_telemetry_log(timestamp, __FILE__, __LINE__, runtime_diagnostic_identifier);
+
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
