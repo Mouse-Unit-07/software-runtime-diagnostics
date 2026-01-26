@@ -68,6 +68,8 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 /*============================================================================*/
 TEST(RuntimeDiagnosticsTest, TelemetryLogIsInitializedToZero)
 {
-    uint8_t expected[sizeof(*get_telemetry_log())] = {0};
-    MEMCMP_EQUAL(expected, get_telemetry_log(), sizeof(*get_telemetry_log()));
+    struct log_entry *actual_telemetry_log = get_telemetry_log();
+    uint8_t expected[sizeof(*actual_telemetry_log)] = {0};
+
+    MEMCMP_EQUAL(expected, actual_telemetry_log, sizeof(*actual_telemetry_log));
 }
