@@ -1,11 +1,11 @@
 /*-------------------------------- FILE INFO ---------------------------------*/
-/* Filename           : c_header.h                                            */
+/* Filename           : runtime_diagnostics.h                                 */
 /*                                                                            */
-/* Interface w/ a function to print Hello World                               */
+/* Interface to runtime logging for telemetry, warnings, and errors           */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-#ifndef PRINT_HELLO_WORLD_H_
-#define PRINT_HELLO_WORLD_H_
+#ifndef RUNTIME_DIAGNOSTICS_H_
+#define RUNTIME_DIAGNOSTICS_H_
 
 /*----------------------------------------------------------------------------*/
 /*                             Public Definitions                             */
@@ -15,6 +15,5 @@
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
-void printHelloWorld(void);
 
-#endif /* PRINT_HELLO_WORLD_H_ */
+#endif /* RUNTIME_DIAGNOSTICS_H_ */

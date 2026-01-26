@@ -1,14 +1,14 @@
 /*-------------------------------- FILE INFO ---------------------------------*/
 /* Filename           : main.c                                                */
 /*                                                                            */
-/* main file for for flashing/testing hello_world interface on mcu            */
+/* main file for flashing/testing runtime_diagnostics interface on mcu        */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
 /*----------------------------------------------------------------------------*/
 /*                               Include Files                                */
 /*----------------------------------------------------------------------------*/
-#include "hello_world/print_hello_world.h"
+#include "runtime_diagnostics/runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/
 /*                                 Debug Space                                */
@@ -34,5 +34,5 @@
 /*----------------------------------------------------------------------------*/
 int main(void)
 {
-    printHelloWorld();
+    
 }
