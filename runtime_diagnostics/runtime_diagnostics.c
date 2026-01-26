@@ -31,21 +31,23 @@ struct log_entry warning_log[WARNING_LOG_CAPACITY] = {0};
 /*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
-/* none */
+void clear_all_logs(void)
+{
+    memset(telemetry_log, 0, sizeof(telemetry_log));
+    memset(warning_log, 0, sizeof(warning_log));
+}
 
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
 void init_runtime_diagnostics()
 {
-    memset(telemetry_log, 0, sizeof(telemetry_log));
-    memset(warning_log, 0, sizeof(warning_log));
+    clear_all_logs();
 }
 
 void deinit_runtime_diagnostics()
 {
-    memset(telemetry_log, 0, sizeof(telemetry_log));
-    memset(warning_log, 0, sizeof(warning_log));
+    clear_all_logs();
 }
 
 struct log_entry *get_telemetry_log(void)
