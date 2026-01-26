@@ -20,7 +20,8 @@ struct log_entry {
 enum
 {
     TELEMETRY_LOG_CAPACITY = 20,
-    WARNING_LOG_CAPACITY = 10
+    WARNING_LOG_CAPACITY = 10,
+    ERROR_LOG_CAPACITY = 10
 };
 
 /*----------------------------------------------------------------------------*/
@@ -30,5 +31,6 @@ void init_runtime_diagnostics();
 void deinit_runtime_diagnostics();
 struct log_entry *get_telemetry_log(void);
 struct log_entry *get_warning_log(void);
+struct log_entry *get_error_log(void);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

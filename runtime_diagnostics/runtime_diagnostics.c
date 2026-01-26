@@ -22,6 +22,7 @@
 /*----------------------------------------------------------------------------*/
 struct log_entry telemetry_log[TELEMETRY_LOG_CAPACITY] = {0};
 struct log_entry warning_log[WARNING_LOG_CAPACITY] = {0};
+struct log_entry error_log[ERROR_LOG_CAPACITY] = {0};
 
 /*----------------------------------------------------------------------------*/
 /*                         Interrupt Service Routines                         */
@@ -35,6 +36,7 @@ void clear_all_logs(void)
 {
     memset(telemetry_log, 0, sizeof(telemetry_log));
     memset(warning_log, 0, sizeof(warning_log));
+    memset(error_log, 0, sizeof(error_log));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -58,6 +60,11 @@ struct log_entry *get_telemetry_log(void)
 struct log_entry *get_warning_log(void)
 {
     return warning_log;
+}
+
+struct log_entry *get_error_log(void)
+{
+    return error_log;
 }
 
 

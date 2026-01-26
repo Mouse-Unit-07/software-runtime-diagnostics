@@ -81,3 +81,11 @@ TEST(RuntimeDiagnosticsTest, WarningLogIsInitializedToZero)
 
     MEMCMP_EQUAL(expected, actual_warning_log, sizeof(*actual_warning_log));
 }
+
+TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
+{
+    struct log_entry *actual_error_log = get_error_log();
+    uint8_t expected[sizeof(*actual_error_log)] = {0};
+
+    MEMCMP_EQUAL(expected, actual_error_log, sizeof(*actual_error_log));
+}
