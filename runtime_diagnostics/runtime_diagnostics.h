@@ -27,10 +27,15 @@ enum
 #define ADD_RUNTIME_TELEMETRY(timestamp, runtime_diagnostic_identifier) \
     add_entry_to_telemetry_log((timestamp), __FILE__, __LINE__, (runtime_diagnostic_identifier))
 
+#define ADD_RUNTIME_WARNING(timestamp, runtime_diagnostic_identifier) \
+    add_entry_to_warning_log((timestamp), __FILE__, __LINE__, (runtime_diagnostic_identifier))
+
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
 void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, 
+    uint16_t line, uint16_t runtime_diagnostic_identifier);
+void add_entry_to_warning_log(uint32_t timestamp, const char *file, 
     uint16_t line, uint16_t runtime_diagnostic_identifier);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

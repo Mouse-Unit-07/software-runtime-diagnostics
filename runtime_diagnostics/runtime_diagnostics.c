@@ -76,6 +76,15 @@ void add_entry_to_telemetry_log(uint32_t timestamp, const char *file,
     telemetry_log[0].runtime_diagnostic_identifier = runtime_diagnostic_identifier;
 }
 
+void add_entry_to_warning_log(uint32_t timestamp, const char *file, 
+    uint16_t line, uint16_t runtime_diagnostic_identifier)
+{
+    warning_log[0].timestamp = timestamp;
+    warning_log[0].file = file;
+    warning_log[0].line = line;
+    warning_log[0].runtime_diagnostic_identifier = runtime_diagnostic_identifier;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */
 /*----------------------------------------------------------------------------*/

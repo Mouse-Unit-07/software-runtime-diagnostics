@@ -118,3 +118,12 @@ TEST(RuntimeDiagnosticsTest, LogMacroAddsNewTelemetryEntry)
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
+
+TEST(RuntimeDiagnosticsTest, LogMacroAddsNewWarningEntry)
+{
+    struct log_entry *actual_warning_log = get_warning_log();
+    struct log_entry expected = { 0, __FILE__, __LINE__ + 1, 2 }; // the +1 is the number of lines to the macro call
+    ADD_RUNTIME_WARNING(expected.timestamp, expected.runtime_diagnostic_identifier);
+
+    CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
+}
