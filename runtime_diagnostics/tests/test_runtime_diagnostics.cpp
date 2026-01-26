@@ -46,6 +46,15 @@ extern "C" {
 namespace
 {
 
+void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
+{
+    CHECK_EQUAL(expected.timestamp, actual.timestamp);
+    STRCMP_EQUAL(expected.file, actual.file);
+    CHECK_EQUAL(expected.line, actual.line);
+    CHECK_EQUAL(expected.runtime_diagnostic_identifier, 
+        actual.runtime_diagnostic_identifier);
+}
+
 }
 
 /*============================================================================*/
@@ -98,9 +107,5 @@ TEST(RuntimeDiagnosticsTest, LogFunctionAddsNewTelemetryEntry)
     add_entry_to_telemetry_log(expected.timestamp, expected.file, expected.line,
         expected.runtime_diagnostic_identifier);
 
-    CHECK_EQUAL(expected.timestamp, actual_telemetry_log[0].timestamp);
-    STRCMP_EQUAL(expected.file, actual_telemetry_log[0].file);
-    CHECK_EQUAL(expected.line, actual_telemetry_log[0].line);
-    CHECK_EQUAL(expected.runtime_diagnostic_identifier,
-        actual_telemetry_log[0].runtime_diagnostic_identifier);
+    CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
