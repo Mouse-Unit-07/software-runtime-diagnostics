@@ -12,9 +12,8 @@
 /*----------------------------------------------------------------------------*/
 struct log_entry {
     uint32_t timestamp;
-    const char *file;
+    const char *file_identifier;
     uint16_t line;
-    uint16_t runtime_diagnostic_identifier;
 };
 
 enum
@@ -24,11 +23,11 @@ enum
     ERROR_LOG_CAPACITY = 10
 };
 
-#define ADD_RUNTIME_TELEMETRY(timestamp, runtime_diagnostic_identifier) \
-    add_entry_to_telemetry_log((timestamp), __FILE__, __LINE__, (runtime_diagnostic_identifier))
+#define RUNTIME_TELEMETRY(timestamp, file_identifier) \
+    add_entry_to_telemetry_log((timestamp), file_identifier, __LINE__)
 
-#define ADD_RUNTIME_WARNING(timestamp, runtime_diagnostic_identifier) \
-    add_entry_to_warning_log((timestamp), __FILE__, __LINE__, (runtime_diagnostic_identifier))
+#define RUNTIME_WARNING(timestamp, file_identifier) \
+    add_entry_to_warning_log((timestamp), file_identifier, __LINE__)
 
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
@@ -43,9 +42,9 @@ single log_entry, but we can't do so because:
      and there's no uniform way to dynamically create a struct in both C/C++
   - ...4 parameters is horrible, but can't avoid it w/o roundabout logic
 */
-void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, 
-    uint16_t line, uint16_t runtime_diagnostic_identifier);
-void add_entry_to_warning_log(uint32_t timestamp, const char *file, 
-    uint16_t line, uint16_t runtime_diagnostic_identifier);
+void add_entry_to_telemetry_log(uint32_t timestamp, const char *file_identifier, 
+    uint16_t line);
+void add_entry_to_warning_log(uint32_t timestamp, const char *file_identifier, 
+    uint16_t line);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

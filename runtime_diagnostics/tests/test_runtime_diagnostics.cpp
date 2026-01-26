@@ -4,14 +4,9 @@
 /* Test implementation for runtime_diagnostics.c                              */
 /*                                                                            */
 /*============================================================================*/
-
+static const char *FILE_IDENTIFIER = "test_runtime_diagnostics.cpp";
 /* scratch notes- a list of tests:
-- does the telemetry log initialize to 0?
-- do all 3 logs initialize to 0's?
-- does the logging function append the right data to a buffer?
 - does the logging function continue to append the right data when called continuously?
-- is the right data stored to each buffer when called w/ different run levels?
-- is the right data stored to each buffer when continuously called w/ different run levels?
 - does calling each macro add a new entry to the buffer?
     - RUNTIME_TELEMETRY
     - RUNTIME_WARNING
@@ -49,11 +44,12 @@ namespace
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
     CHECK_EQUAL(expected.timestamp, actual.timestamp);
-    STRCMP_EQUAL(expected.file, actual.file);
+    STRCMP_EQUAL(expected.file_identifier, actual.file_identifier);
     CHECK_EQUAL(expected.line, actual.line);
-    CHECK_EQUAL(expected.runtime_diagnostic_identifier, 
-        actual.runtime_diagnostic_identifier);
 }
+
+// NEXT_LINE is used to increment __LINE__ to the line of the macro
+enum { NEXT_LINE = 1 };
 
 }
 
@@ -100,30 +96,30 @@ TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
     MEMCMP_EQUAL(expected, actual_error_log, sizeof(*actual_error_log));
 }
 
-TEST(RuntimeDiagnosticsTest, LogFunctionAddsNewTelemetryEntry)
+TEST(RuntimeDiagnosticsTest, FunctionAddsNewTelemetryEntry)
 {
     struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected = { 0, "some_file.c", 1, 2 };
-    add_entry_to_telemetry_log(expected.timestamp, expected.file,
-        expected.line, expected.runtime_diagnostic_identifier);
+    struct log_entry expected = { 0, "some_file.c", 1 };
+    add_entry_to_telemetry_log(expected.timestamp, expected.file_identifier,
+        expected.line);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
 
-TEST(RuntimeDiagnosticsTest, LogMacroAddsNewTelemetryEntry)
+TEST(RuntimeDiagnosticsTest, MacroAddsNewTelemetryEntry)
 {
     struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected = { 0, __FILE__, __LINE__ + 1, 2 }; // the +1 is the number of lines to the macro call
-    ADD_RUNTIME_TELEMETRY(expected.timestamp, expected.runtime_diagnostic_identifier);
+    struct log_entry expected = { 0, FILE_IDENTIFIER, __LINE__ + NEXT_LINE };
+    RUNTIME_TELEMETRY(expected.timestamp, expected.file_identifier);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
 
-TEST(RuntimeDiagnosticsTest, LogMacroAddsNewWarningEntry)
+TEST(RuntimeDiagnosticsTest, MacroAddsNewWarningEntry)
 {
     struct log_entry *actual_warning_log = get_warning_log();
-    struct log_entry expected = { 0, __FILE__, __LINE__ + 1, 2 }; // the +1 is the number of lines to the macro call
-    ADD_RUNTIME_WARNING(expected.timestamp, expected.runtime_diagnostic_identifier);
+    struct log_entry expected = { 0, FILE_IDENTIFIER, __LINE__ + NEXT_LINE };
+    RUNTIME_WARNING(expected.timestamp, expected.file_identifier);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
 }
