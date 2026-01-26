@@ -67,8 +67,8 @@ struct log_entry *get_error_log(void)
     return error_log;
 }
 
-void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, uint16_t line,
-    uint16_t runtime_diagnostic_identifier)
+void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, 
+    uint16_t line, uint16_t runtime_diagnostic_identifier)
 {
     telemetry_log[0].timestamp = timestamp;
     telemetry_log[0].file = file;

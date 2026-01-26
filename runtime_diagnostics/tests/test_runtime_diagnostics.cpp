@@ -104,8 +104,8 @@ TEST(RuntimeDiagnosticsTest, LogFunctionAddsNewTelemetryEntry)
 {
     struct log_entry *actual_telemetry_log = get_telemetry_log();
     struct log_entry expected = { 0, "some_file.c", 1, 2 };
-    add_entry_to_telemetry_log(expected.timestamp, expected.file, expected.line,
-        expected.runtime_diagnostic_identifier);
+    add_entry_to_telemetry_log(expected.timestamp, expected.file,
+        expected.line, expected.runtime_diagnostic_identifier);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
@@ -114,7 +114,7 @@ TEST(RuntimeDiagnosticsTest, LogMacroAddsNewTelemetryEntry)
 {
     struct log_entry *actual_telemetry_log = get_telemetry_log();
     struct log_entry expected = { 0, __FILE__, __LINE__ + 1, 2 }; // the +1 is the number of lines to the macro call
-    ADD_RUNTIME_TELEMETRY(expected.timestamp, expected.runtime_diagnostic_identifier)
+    ADD_RUNTIME_TELEMETRY(expected.timestamp, expected.runtime_diagnostic_identifier);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
