@@ -109,6 +109,13 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
         create_log_entry(timestamp, fail_message, fail_value));
 }
 
+void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    add_entry_to_log(ERROR_LOG_INDEX,
+        create_log_entry(timestamp, fail_message, fail_value));
+}
+
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */
 /*----------------------------------------------------------------------------*/

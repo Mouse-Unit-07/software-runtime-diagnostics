@@ -109,3 +109,12 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
 }
+
+TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
+{
+    struct log_entry *actual_error_log = get_error_log();
+    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new error", 2 };
+    RUNTIME_ERROR(expected.timestamp, expected.fail_message, expected.fail_value);
+
+    CHECK_LOG_ENTRY_EQUAL(expected, actual_error_log[0]);
+}
