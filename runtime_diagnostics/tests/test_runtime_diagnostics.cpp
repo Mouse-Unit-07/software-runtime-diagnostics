@@ -5,11 +5,8 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
+- does the init/deinit functions do what they're supposed to do?
 - does the logging function continue to append the right data when called continuously?
-- does calling each macro add a new entry to the buffer?
-    - RUNTIME_TELEMETRY
-    - RUNTIME_WARNING
-    - RUNTIME_ERROR
 - does calling RUNTIME_ERROR assert the error flag?
 - is the error callback function not called when it's not set yet?
 - does calling RUNTIME_ERROR call the error callback function when it's set?
@@ -104,7 +101,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLog)
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
 {
     struct log_entry *actual_warning_log = get_warning_log();
-    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new warning", 2 };
+    struct log_entry expected = { 3, "test_runtime_diagnostics.cpp: new warning", 4 };
     RUNTIME_WARNING(expected.timestamp, expected.fail_message, expected.fail_value);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
@@ -113,8 +110,23 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
 {
     struct log_entry *actual_error_log = get_error_log();
-    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new error", 2 };
+    struct log_entry expected = { 5, "test_runtime_diagnostics.cpp: new error", 6 };
     RUNTIME_ERROR(expected.timestamp, expected.fail_message, expected.fail_value);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_error_log[0]);
+}
+
+TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
+{
+    struct log_entry *actual_telemetry_log = get_telemetry_log();
+    struct log_entry expected_1 = { 7, "first telemetry", 8 };
+    struct log_entry expected_2 = { 9, "second telemetry", 10 };
+    struct log_entry expected_3 = { 11, "third telemetry", 12 };
+    RUNTIME_TELEMETRY(expected_1.timestamp, expected_1.fail_message, expected_1.fail_value);
+    RUNTIME_TELEMETRY(expected_2.timestamp, expected_2.fail_message, expected_2.fail_value);
+    RUNTIME_TELEMETRY(expected_3.timestamp, expected_3.fail_message, expected_3.fail_value);
+
+    CHECK_LOG_ENTRY_EQUAL(expected_1, actual_telemetry_log[0]);
+    CHECK_LOG_ENTRY_EQUAL(expected_2, actual_telemetry_log[1]);
+    CHECK_LOG_ENTRY_EQUAL(expected_3, actual_telemetry_log[2]);
 }
