@@ -27,6 +27,7 @@ enum
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
-/* none */
+void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, uint16_t line, 
+    uint16_t runtime_diagnostic_identifier);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

@@ -32,7 +32,7 @@ struct log_entry error_log[ERROR_LOG_CAPACITY] = {0};
 /*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
-void clear_all_logs(void)
+static void clear_all_logs(void)
 {
     memset(telemetry_log, 0, sizeof(telemetry_log));
     memset(warning_log, 0, sizeof(warning_log));
@@ -67,6 +67,14 @@ struct log_entry *get_error_log(void)
     return error_log;
 }
 
+void add_entry_to_telemetry_log(uint32_t timestamp, const char *file, uint16_t line,
+    uint16_t runtime_diagnostic_identifier)
+{
+    telemetry_log[0].timestamp = timestamp;
+    telemetry_log[0].file = file;
+    telemetry_log[0].line = line;
+    telemetry_log[0].runtime_diagnostic_identifier = runtime_diagnostic_identifier;
+}
 
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */
