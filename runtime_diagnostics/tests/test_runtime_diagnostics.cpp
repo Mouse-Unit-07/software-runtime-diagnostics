@@ -34,6 +34,7 @@
 extern "C" {
   #include <stdint.h>
   #include "runtime_diagnostics.h"
+  #include "runtime_diagnostics_test_access.h"
 }
 
 #include <cstdint>
