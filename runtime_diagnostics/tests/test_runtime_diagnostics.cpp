@@ -73,3 +73,11 @@ TEST(RuntimeDiagnosticsTest, TelemetryLogIsInitializedToZero)
 
     MEMCMP_EQUAL(expected, actual_telemetry_log, sizeof(*actual_telemetry_log));
 }
+
+TEST(RuntimeDiagnosticsTest, WarningLogIsInitializedToZero)
+{
+    struct log_entry *actual_warning_log = get_warning_log();
+    uint8_t expected[sizeof(*actual_warning_log)] = {0};
+
+    MEMCMP_EQUAL(expected, actual_warning_log, sizeof(*actual_warning_log));
+}

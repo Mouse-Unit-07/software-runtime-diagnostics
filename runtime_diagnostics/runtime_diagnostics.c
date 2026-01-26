@@ -20,7 +20,8 @@
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
 /*----------------------------------------------------------------------------*/
-struct log_entry telemetry_log[LOG_CAPACITY] = {0};
+struct log_entry telemetry_log[TELEMETRY_LOG_CAPACITY] = {0};
+struct log_entry warning_log[WARNING_LOG_CAPACITY] = {0};
 
 /*----------------------------------------------------------------------------*/
 /*                         Interrupt Service Routines                         */
@@ -38,17 +39,25 @@ struct log_entry telemetry_log[LOG_CAPACITY] = {0};
 void init_runtime_diagnostics()
 {
     memset(telemetry_log, 0, sizeof(telemetry_log));
+    memset(warning_log, 0, sizeof(warning_log));
 }
 
 void deinit_runtime_diagnostics()
 {
     memset(telemetry_log, 0, sizeof(telemetry_log));
+    memset(warning_log, 0, sizeof(warning_log));
 }
 
 struct log_entry *get_telemetry_log(void)
 {
     return telemetry_log;
 }
+
+struct log_entry *get_warning_log(void)
+{
+    return warning_log;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */

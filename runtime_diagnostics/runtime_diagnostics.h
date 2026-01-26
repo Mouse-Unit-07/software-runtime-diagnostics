@@ -17,7 +17,11 @@ struct log_entry {
     uint16_t runtime_diagnostic_identifier;
 };
 
-enum {LOG_CAPACITY = 16};
+enum
+{
+    TELEMETRY_LOG_CAPACITY = 20,
+    WARNING_LOG_CAPACITY = 10
+};
 
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
@@ -25,5 +29,6 @@ enum {LOG_CAPACITY = 16};
 void init_runtime_diagnostics();
 void deinit_runtime_diagnostics();
 struct log_entry *get_telemetry_log(void);
+struct log_entry *get_warning_log(void);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */
