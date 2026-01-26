@@ -4,7 +4,6 @@
 /* An implementation of a simple log w/ a circular buffer                     */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-static const char *FILE_IDENTIFIER = "runtime_diagnostics.c";
 
 /*----------------------------------------------------------------------------*/
 /*                               Include Files                                */
@@ -21,9 +20,9 @@ static const char *FILE_IDENTIFIER = "runtime_diagnostics.c";
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
 /*----------------------------------------------------------------------------*/
-static struct log_entry telemetry_log[TELEMETRY_LOG_CAPACITY] = {{0}};
-static struct log_entry warning_log[WARNING_LOG_CAPACITY] = {{0}};
-static struct log_entry error_log[ERROR_LOG_CAPACITY] = {{0}};
+static struct log_entry telemetry_log[TELEMETRY_LOG_SIZE] = {{0}};
+static struct log_entry warning_log[WARNING_LOG_SIZE] = {{0}};
+static struct log_entry error_log[ERROR_LOG_SIZE] = {{0}};
 
 enum log_array_index
 {
@@ -57,8 +56,8 @@ static void add_entry_to_log(enum log_array_index log_index,
     struct log_entry new_entry)
 {
     log_array[log_index][0].timestamp = new_entry.timestamp;
-    log_array[log_index][0].file_identifier = new_entry.file_identifier;
-    log_array[log_index][0].line = new_entry.line;
+    log_array[log_index][0].fail_message = new_entry.fail_message;
+    log_array[log_index][0].fail_value = new_entry.fail_value;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -89,25 +88,25 @@ struct log_entry *get_error_log(void)
     return error_log;
 }
 
-struct log_entry create_log_entry(uint32_t timestamp,
-    const char *file_identifier, uint16_t line)
+struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
 {
-    struct log_entry new_entry = {timestamp, file_identifier, line};
+    struct log_entry new_entry = {timestamp, fail_message, fail_value};
     return new_entry;
 }
 
-void add_entry_to_telemetry_log(uint32_t timestamp,
-    const char *file_identifier, uint16_t line)
+void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
 {
     add_entry_to_log(TELEMETRY_LOG_INDEX,
-        create_log_entry(timestamp, file_identifier, line));
+        create_log_entry(timestamp, fail_message, fail_value));
 }
 
-void add_entry_to_warning_log(uint32_t timestamp,
-    const char *file_identifier, uint16_t line)
+void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
 {
     add_entry_to_log(WARNING_LOG_INDEX,
-        create_log_entry(timestamp, file_identifier, line));
+        create_log_entry(timestamp, fail_message, fail_value));
 }
 
 /*----------------------------------------------------------------------------*/

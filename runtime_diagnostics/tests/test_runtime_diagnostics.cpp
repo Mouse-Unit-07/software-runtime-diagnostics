@@ -4,7 +4,6 @@
 /* Test implementation for runtime_diagnostics.c                              */
 /*                                                                            */
 /*============================================================================*/
-static const char *FILE_IDENTIFIER = "test_runtime_diagnostics.cpp";
 /* scratch notes- a list of tests:
 - does the logging function continue to append the right data when called continuously?
 - does calling each macro add a new entry to the buffer?
@@ -44,12 +43,9 @@ namespace
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
     CHECK_EQUAL(expected.timestamp, actual.timestamp);
-    STRCMP_EQUAL(expected.file_identifier, actual.file_identifier);
-    CHECK_EQUAL(expected.line, actual.line);
+    STRCMP_EQUAL(expected.fail_message, actual.fail_message);
+    CHECK_EQUAL(expected.fail_value, actual.fail_value);
 }
-
-// NEXT_LINE is used to increment __LINE__ to the line of the macro
-enum { NEXT_LINE = 1 };
 
 }
 
@@ -96,30 +92,20 @@ TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
     MEMCMP_EQUAL(expected, actual_error_log, sizeof(*actual_error_log));
 }
 
-TEST(RuntimeDiagnosticsTest, FunctionAddsNewTelemetryEntry)
+TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLog)
 {
     struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected = { 0, "some_file.c", 1 };
-    add_entry_to_telemetry_log(expected.timestamp, expected.file_identifier,
-        expected.line);
+    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new telemetry", 2 };
+    RUNTIME_TELEMETRY(expected.timestamp, expected.fail_message, expected.fail_value);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
 }
 
-TEST(RuntimeDiagnosticsTest, MacroAddsNewTelemetryEntry)
-{
-    struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected = { 0, FILE_IDENTIFIER, __LINE__ + NEXT_LINE };
-    RUNTIME_TELEMETRY(expected.timestamp, expected.file_identifier);
-
-    CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
-}
-
-TEST(RuntimeDiagnosticsTest, MacroAddsNewWarningEntry)
+TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
 {
     struct log_entry *actual_warning_log = get_warning_log();
-    struct log_entry expected = { 0, FILE_IDENTIFIER, __LINE__ + NEXT_LINE };
-    RUNTIME_WARNING(expected.timestamp, expected.file_identifier);
+    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new warning", 2 };
+    RUNTIME_WARNING(expected.timestamp, expected.fail_message, expected.fail_value);
 
     CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
 }

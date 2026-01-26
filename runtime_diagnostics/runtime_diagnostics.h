@@ -12,39 +12,25 @@
 /*----------------------------------------------------------------------------*/
 struct log_entry {
     uint32_t timestamp;
-    const char *file_identifier;
-    uint16_t line;
+    const char *fail_message;
+    uint32_t fail_value;
 };
 
 enum
 {
-    TELEMETRY_LOG_CAPACITY = 20,
-    WARNING_LOG_CAPACITY = 10,
-    ERROR_LOG_CAPACITY = 10
+    TELEMETRY_LOG_SIZE = 20,
+    WARNING_LOG_SIZE = 10,
+    ERROR_LOG_SIZE = 10
 };
 
-#define RUNTIME_TELEMETRY(timestamp, file_identifier) \
-    add_entry_to_telemetry_log((timestamp), file_identifier, __LINE__)
-
-#define RUNTIME_WARNING(timestamp, file_identifier) \
-    add_entry_to_warning_log((timestamp), file_identifier, __LINE__)
+void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value);
+void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value);
 
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
-/*
-...The parameters in below functions are begging to be swapped out for a 
-single log_entry, but we can't do so because:
-  - We want preprocessor macro wrappers to sprinkle __FILE__ and __LINE__
-  - A macro that takes a struct as a param is hard to use
-  - Macro needs to dynamically create a struct w/ params to pass to function
-  - Preprocessor macros expand in both C production and C++ test source files,
-     and there's no uniform way to dynamically create a struct in both C/C++
-  - ...4 parameters is horrible, but can't avoid it w/o roundabout logic
-*/
-void add_entry_to_telemetry_log(uint32_t timestamp, const char *file_identifier, 
-    uint16_t line);
-void add_entry_to_warning_log(uint32_t timestamp, const char *file_identifier, 
-    uint16_t line);
+/* none */
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */
