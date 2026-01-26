@@ -5,7 +5,6 @@
 #                                                                              #
 #------------------------------------------------------------------------------#
 cmake_minimum_required(VERSION 4.0.2)
-project(runtime_diagnostics_project LANGUAGES C) # <== Name your software project
+project(runtime_diagnostics_project LANGUAGES C)
 
-# \/=== Add all interface directories (each w/ a CMakeLists.txt)
 add_subdirectory(runtime_diagnostics)
