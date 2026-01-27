@@ -5,7 +5,6 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- is the error callback function not called when it's not set yet?
 - does calling RUNTIME_ERROR call the error callback function when it's set?
 - can you keep pushing to the buffer until capacity is reached?
 - is the right behavior observed in response to reaching capacity for:
@@ -43,6 +42,8 @@ extern struct circular_buffer error_cb;
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 
 extern volatile bool runtime_error_asserted;
+
+volatile bool dummyErrorCallbackFunctionCalled = false;
 
 /*============================================================================*/
 /*                             Private Definitions                            */
@@ -111,6 +112,11 @@ struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_messag
     struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
 
     return dummyEntry;
+}
+
+void dummyErrorCallbackFunction(void)
+{
+    dummyErrorCallbackFunctionCalled = true;
 }
 
 }
@@ -227,4 +233,12 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
     addOneEntry(ERROR_INDEX,
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
     CHECK(runtime_error_asserted == true);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
+{
+    set_error_handler_function(dummyErrorCallbackFunction);
+    addOneEntry(ERROR_INDEX,
+        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    CHECK(dummyErrorCallbackFunctionCalled == true);
 }

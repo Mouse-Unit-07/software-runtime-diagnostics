@@ -42,6 +42,8 @@ struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT] \
         = { &telemetry_cb, &warning_cb, &error_cb };
 
 volatile bool runtime_error_asserted = false;
+bool user_error_handler_set = false;
+void (*user_error_handler)(void) = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*                         Interrupt Service Routines                         */
@@ -116,9 +118,19 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
     runtime_error_asserted = true;
-
+    
     add_entry_to_log(ERROR_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
+    
+    if (user_error_handler_set) {
+        user_error_handler();
+    }
+}
+
+void set_error_handler_function(void (*handler_function)(void))
+{
+    user_error_handler = handler_function;
+    user_error_handler_set = true;
 }
 
 /*----------------------------------------------------------------------------*/
