@@ -53,5 +53,11 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
 
 void set_error_handler_function(void (*handler_function)(void));
 void printf_telemetry_log(void);
+void printf_warning_log(void);
+void printf_error_log(void);
+
+//private helper for test
+struct log_entry get_entry_at_index(enum log_types_indices log_index, 
+        uint32_t entry_index);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

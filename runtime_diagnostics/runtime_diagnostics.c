@@ -85,13 +85,23 @@ static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_me
     return new_entry;
 }
 
-static struct log_entry get_entry_at_index(enum log_types_indices log_index, 
+//private helper, but removing static to allow test access
+struct log_entry get_entry_at_index(enum log_types_indices log_index, 
         uint32_t entry_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
     uint32_t oldest_entry_index = (target_cb->head + target_cb->size - target_cb->count) % target_cb->size;
     uint32_t return_entry_index = (oldest_entry_index + entry_index) % target_cb->size;
     return target_cb->log_entries[return_entry_index];
+}
+
+static void printf_log(enum log_types_indices log_index)
+{
+    for (uint32_t i = 0; i < circular_buffer_array[log_index]->count; i++) {
+        struct log_entry entry = get_entry_at_index(log_index, i);
+        printf("%" PRIu32 " %s %" PRIu32 "\r\n", 
+                entry.timestamp, entry.fail_message, entry.fail_value);
+    }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -141,12 +151,18 @@ void set_error_handler_function(void (*handler_function)(void))
 }
 
 void printf_telemetry_log(void)
-{ 
-    for (uint32_t i = 0; i < circular_buffer_array[TELEMETRY_INDEX]->count; i++) {
-        struct log_entry entry = get_entry_at_index(TELEMETRY_INDEX, i);
-        printf("%" PRIu32 " %s %" PRIu32 "\r\n", 
-                entry.timestamp, entry.fail_message, entry.fail_value);
-    }
+{
+    printf_log(TELEMETRY_INDEX);
+}
+
+void printf_warning_log(void)
+{
+
+}
+
+void printf_error_log(void)
+{
+        
 }
 
 /*----------------------------------------------------------------------------*/

@@ -46,16 +46,18 @@ extern volatile bool runtime_error_asserted;
 
 volatile bool dummyErrorCallbackFunctionCalled = false;
 
-static FILE *saved_stdout = nullptr;
+static FILE *standardOutput = nullptr;
+
+void (*runtime_functions[LOG_TYPES_COUNT])(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value) = {RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
+void (*print_log_functions[LOG_TYPES_COUNT])(void) \
+        = {printf_telemetry_log, printf_warning_log, printf_error_log};
 
 /*============================================================================*/
 /*                             Private Definitions                            */
 /*============================================================================*/
 namespace
 {
-
-void (*runtime_functions[LOG_TYPES_COUNT])(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value) = {RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
@@ -122,20 +124,63 @@ void dummyErrorCallbackFunction(void)
     dummyErrorCallbackFunctionCalled = true;
 }
 
-void redirect_stdout(const char *filename)
+void redirectStdout(const char *filename)
 {
     fflush(stdout);
-    saved_stdout = freopen(filename, "w", stdout);
-    CHECK(saved_stdout != nullptr);
+    standardOutput = freopen(filename, "w", stdout);
+    CHECK(standardOutput != nullptr);
 }
 
-void restore_stdout(void)
+void restoreStdout(void)
 {
     fflush(stdout);
-    CHECK(saved_stdout != nullptr);
-    if (saved_stdout) {
+    CHECK(standardOutput != nullptr);
+    if (standardOutput) {
         freopen("CON", "w", stdout);
     }
+}
+
+bool isFileEmpty(FILE *file)
+{
+    int c = fgetc(file);
+    if (c == EOF) {
+        return true;
+    }
+    ungetc(c, file);
+
+    return false;
+}
+
+void COMPARE_LOG_AND_FILE(FILE *file, enum log_types_indices log_index)
+{
+    enum {LOG_ENTRY_MAX_SIZE = 256}; //arbitrary max- 256 bytes is plenty to cover any log entry
+    char actual_log_entry[LOG_ENTRY_MAX_SIZE];
+    char expected_log_entry[LOG_ENTRY_MAX_SIZE];
+
+    uint32_t entry_index = 0u;
+    while (fgets(actual_log_entry, sizeof(actual_log_entry), file) != NULL) {
+        log_entry raw_entry = get_entry_at_index(log_index, entry_index);
+        snprintf(expected_log_entry, sizeof(expected_log_entry), "%" PRIu32 " %s %" PRIu32 "\r\n",
+            raw_entry.timestamp,
+            raw_entry.fail_message,
+            raw_entry.fail_value
+        );
+        STRCMP_EQUAL(expected_log_entry, actual_log_entry);
+        entry_index++;
+    }
+}
+
+void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_types_indices log_index)
+{
+    const char *TEST_FILENAME = "test_output.txt";
+    redirectStdout(TEST_FILENAME);
+    print_log_functions[log_index]();
+    restoreStdout();
+    FILE *file = fopen(TEST_FILENAME, "r");
+    CHECK(file != nullptr);
+    CHECK(!isFileEmpty(file));
+
+    COMPARE_LOG_AND_FILE(file, log_index);
 }
 
 }
@@ -267,24 +312,5 @@ TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
     for (uint32_t i = 0; i < 3; i++) {
         addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "dummy message", i + 1));
     }
-
-    redirect_stdout("test_output.txt");
-    printf_telemetry_log();
-    restore_stdout();
-    FILE *file = fopen("test_output.txt", "r");
-    CHECK(file != nullptr);
-
-    char actual_log_entry[256]; //arbitrary buffer size- individual log entries shouldn't be this long
-    char expected_log_entry[256];
-    uint32_t line_number = 0u;
-    while (fgets(actual_log_entry, sizeof(actual_log_entry), file) != NULL)
-    {
-        snprintf(expected_log_entry, sizeof(expected_log_entry), "%" PRIu32 " %s %" PRIu32 "\r\n",
-            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].timestamp,
-            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].fail_message,
-            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].fail_value
-        );
-        STRCMP_EQUAL(expected_log_entry, actual_log_entry);
-        line_number++;
-    }
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_INDEX);
 }
