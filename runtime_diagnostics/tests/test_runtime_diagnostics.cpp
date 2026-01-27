@@ -55,6 +55,36 @@ void (*print_log_functions[LOG_TYPES_COUNT])(void){printf_telemetry_log, printf_
 namespace
 {
 
+struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
+
+    return dummyEntry;
+}
+
+void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
+{
+    runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
+}
+
+void addOverflowEntriesAndUpdateExpected(enum log_types_indices log_index, struct log_entry *expected, 
+    uint32_t newEntriesCount)
+{
+    struct circular_buffer *targetCb{circular_buffer_array[log_index]};
+    uint32_t logSize{targetCb->size};
+    
+    uint32_t startRecordingIndex{newEntriesCount - logSize};
+    struct log_entry new_entry{0};
+    for (uint32_t i{0}; i < newEntriesCount; i++) {
+        new_entry = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
+        addOneEntry(log_index, new_entry);
+        if (i >= startRecordingIndex) {
+            expected[i - startRecordingIndex] = new_entry;
+        }
+    }
+}
+
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
     CHECK_EQUAL(expected.timestamp, actual.timestamp);
@@ -62,9 +92,12 @@ void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
     CHECK_EQUAL(expected.fail_value, actual.fail_value);
 }
 
-void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
+void COMPARE_LOG_AND_EXPECTED(enum log_types_indices log_index, struct log_entry *expected)
 {
-    runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
+    for (uint32_t i{0}; i < circular_buffer_array[log_index]->size; i++) {
+        struct log_entry actual_entry = get_entry_at_index(log_index, i);
+        CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
+    }
 }
 
 void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry expected)
@@ -107,14 +140,6 @@ void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
     for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
         CHECK(circular_buffer_array[i]->log_entries != NULL);
     }
-}
-
-struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value)
-{
-    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
-
-    return dummyEntry;
 }
 
 void dummyErrorCallbackFunction(void)
@@ -293,21 +318,11 @@ TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
     struct log_entry expected[TELEMETRY_LOG_SIZE] = {{0}};
-    struct log_entry new_entry{0};
     uint32_t totalNewEntriesCount = TELEMETRY_LOG_SIZE + 17; // arbitrary [prime number] overflow entries
-    uint32_t startRecordingIndex = totalNewEntriesCount - TELEMETRY_LOG_SIZE;
+    
+    addOverflowEntriesAndUpdateExpected(TELEMETRY_INDEX, expected, totalNewEntriesCount);
 
-    for (uint32_t i{0}; i < totalNewEntriesCount; i++) {
-        new_entry = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1);
-        addOneEntry(TELEMETRY_INDEX, new_entry);
-        if (i >= startRecordingIndex) {
-            expected[i - startRecordingIndex] = new_entry;
-        }
-    }
-    for (uint32_t i{0}; i < TELEMETRY_LOG_SIZE; i++) {
-        struct log_entry actual_entry = get_entry_at_index(TELEMETRY_INDEX, i);
-        CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
-    }
+    COMPARE_LOG_AND_EXPECTED(TELEMETRY_INDEX, expected);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
