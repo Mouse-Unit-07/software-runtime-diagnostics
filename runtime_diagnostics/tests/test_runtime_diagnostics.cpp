@@ -40,9 +40,9 @@ extern struct circular_buffer error_cb;
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 extern volatile bool runtime_error_asserted;
 
-volatile bool dummyErrorCallbackFunctionCalled{false};
+volatile bool dummy_error_callback_called{false};
 
-static FILE *standardOutput{nullptr};
+static FILE *saved_output{nullptr};
 
 void (*runtime_functions[LOG_TYPES_COUNT])(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value){RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
@@ -55,32 +55,32 @@ void (*print_log_functions[LOG_TYPES_COUNT])(void){printf_telemetry_log, printf_
 namespace
 {
 
-struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
+struct log_entry create_one_dummy_entry(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
+    struct log_entry dummy_entry = {timestamp, fail_message, fail_value};
 
-    return dummyEntry;
+    return dummy_entry;
 }
 
-void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
+void add_one_entry(enum log_types_indices log_index, struct log_entry expected)
 {
     runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
 }
 
-void addOverflowEntriesAndUpdateExpected(enum log_types_indices log_index, struct log_entry *expected, 
-    uint32_t newEntriesCount)
+void overflow_log_and_update_expected(enum log_types_indices log_index, struct log_entry *expected, 
+    uint32_t new_entries_count)
 {
-    struct circular_buffer *targetCb{circular_buffer_array[log_index]};
-    uint32_t logSize{targetCb->size};
+    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
+    uint32_t log_size{target_cb->size};
     
-    uint32_t startRecordingIndex{newEntriesCount - logSize};
+    uint32_t start_recording_index{new_entries_count - log_size};
     struct log_entry new_entry{0};
-    for (uint32_t i{0}; i < newEntriesCount; i++) {
-        new_entry = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
-        addOneEntry(log_index, new_entry);
-        if (i >= startRecordingIndex) {
-            expected[i - startRecordingIndex] = new_entry;
+    for (uint32_t i{0}; i < new_entries_count; i++) {
+        new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
+        add_one_entry(log_index, new_entry);
+        if (i >= start_recording_index) {
+            expected[i - start_recording_index] = new_entry;
         }
     }
 }
@@ -102,7 +102,7 @@ void COMPARE_LOG_AND_EXPECTED(enum log_types_indices log_index, struct log_entry
 
 void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry expected)
 {
-    addOneEntry(log_index, expected);
+    add_one_entry(log_index, expected);
     
     log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->count - 1);
     CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
@@ -142,28 +142,28 @@ void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
     }
 }
 
-void dummyErrorCallbackFunction(void)
+void dummy_callback_function(void)
 {
-    dummyErrorCallbackFunctionCalled = true;
+    dummy_error_callback_called = true;
 }
 
-void redirectStdout(const char *filename)
+void redirect_stdout(const char *filename)
 {
     fflush(stdout);
-    standardOutput = freopen(filename, "w", stdout);
-    CHECK(standardOutput != nullptr);
+    saved_output = freopen(filename, "w", stdout);
+    CHECK(saved_output != nullptr);
 }
 
-void restoreStdout(void)
+void restore_stdout(void)
 {
     fflush(stdout);
-    CHECK(standardOutput != nullptr);
-    if (standardOutput) {
+    CHECK(saved_output != nullptr);
+    if (saved_output) {
         freopen("CON", "w", stdout);
     }
 }
 
-bool isFileEmpty(FILE *file)
+bool is_file_empty(FILE *file)
 {
     int c{fgetc(file)};
     if (c == EOF) {
@@ -196,12 +196,12 @@ void COMPARE_LOG_AND_FILE(FILE *file, enum log_types_indices log_index)
 void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_types_indices log_index)
 {
     const char *TEST_FILENAME{"test_output.txt"};
-    redirectStdout(TEST_FILENAME);
+    redirect_stdout(TEST_FILENAME);
     print_log_functions[log_index]();
-    restoreStdout();
+    restore_stdout();
     FILE *file{fopen(TEST_FILENAME, "r")};
     CHECK(file != nullptr);
-    CHECK(!isFileEmpty(file));
+    CHECK(!is_file_empty(file));
 
     COMPARE_LOG_AND_FILE(file, log_index);
 }
@@ -280,7 +280,7 @@ TEST(RuntimeDiagnosticsTest, CheckThatNoBuffersHaveZeroSize)
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX,
-        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: telemetry msg", 2));
+        create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: telemetry msg", 2));
     
     CHECK_ALL_OTHER_LOGS_ARE_CLEAR(TELEMETRY_INDEX);
 }
@@ -288,7 +288,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(WARNING_INDEX,
-        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: warning message", 2));
+        create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: warning message", 2));
     
     CHECK_ALL_OTHER_LOGS_ARE_CLEAR(WARNING_INDEX);
 }
@@ -296,7 +296,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(ERROR_INDEX,
-        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
+        create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
     
     CHECK_ALL_OTHER_LOGS_ARE_CLEAR(ERROR_INDEX);
 }
@@ -304,46 +304,46 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
     for (uint32_t i{0}; i < (TELEMETRY_LOG_SIZE - 1); i++) {
-        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
+        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
     for (uint32_t i{0}; i < TELEMETRY_LOG_SIZE; i++) {
-        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
+        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
     struct log_entry expected[TELEMETRY_LOG_SIZE] = {{0}};
-    uint32_t totalNewEntriesCount = TELEMETRY_LOG_SIZE + 17; // arbitrary [prime number] overflow entries
+    uint32_t total_new_entries_count = TELEMETRY_LOG_SIZE + 17; // arbitrary [prime number] overflow entries
     
-    addOverflowEntriesAndUpdateExpected(TELEMETRY_INDEX, expected, totalNewEntriesCount);
+    overflow_log_and_update_expected(TELEMETRY_INDEX, expected, total_new_entries_count);
 
     COMPARE_LOG_AND_EXPECTED(TELEMETRY_INDEX, expected);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
 {
-    addOneEntry(ERROR_INDEX,
-        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    add_one_entry(ERROR_INDEX,
+        create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
     CHECK(runtime_error_asserted == true);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 {
-    set_error_handler_function(dummyErrorCallbackFunction);
-    addOneEntry(ERROR_INDEX,
-        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
-    CHECK(dummyErrorCallbackFunctionCalled == true);
+    set_error_handler_function(dummy_callback_function);
+    add_one_entry(ERROR_INDEX,
+        create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    CHECK(dummy_error_callback_called == true);
 }
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 {
     for (uint32_t i{0}; i < 3; i++) {
-        addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry message", i + 1));
+        add_one_entry(TELEMETRY_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_INDEX);
 }
@@ -351,7 +351,7 @@ TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 {
     for (uint32_t i{0}; i < 3; i++) {
-        addOneEntry(WARNING_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning message", i + 1));
+        add_one_entry(WARNING_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_INDEX);
 }
@@ -359,7 +359,7 @@ TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
 {
     for (uint32_t i{0}; i < 3; i++) {
-        addOneEntry(ERROR_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error message", i + 1));
+        add_one_entry(ERROR_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: error message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_INDEX);
 }
