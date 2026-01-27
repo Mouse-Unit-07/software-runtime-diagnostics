@@ -5,7 +5,6 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- does calling RUNTIME_ERROR assert the error flag?
 - is the error callback function not called when it's not set yet?
 - does calling RUNTIME_ERROR call the error callback function when it's set?
 - can you keep pushing to the buffer until capacity is reached?
@@ -61,25 +60,6 @@ void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
     CHECK_EQUAL(expected.fail_value, actual.fail_value);
 }
 
-void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
-{
-    struct log_entry target_entry = {0};
-    for (uint32_t i = 0; i < log_sizes_array[log_index]; i++) {
-        target_entry = circular_buffer_array[log_index]->log_entries[i]; 
-        CHECK(target_entry.timestamp == 0);
-        CHECK(target_entry.fail_message == NULL);
-        CHECK(target_entry.fail_value == 0);
-    }
-}
-
-struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value)
-{
-    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
-
-    return dummyEntry;
-}
-
 void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
 {
     runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
@@ -88,7 +68,7 @@ void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
 void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry expected)
 {
     addOneEntry(log_index, expected);
-
+    
     CHECK_LOG_ENTRY_EQUAL(expected, circular_buffer_array[log_index]->log_entries[0]);
 }
 
@@ -100,10 +80,14 @@ void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_en
     }
 }
 
-void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
+void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
 {
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
-        CHECK(circular_buffer_array[i]->log_entries != NULL);
+    struct log_entry target_entry = {0};
+    for (uint32_t i = 0; i < log_sizes_array[log_index]; i++) {
+        target_entry = circular_buffer_array[log_index]->log_entries[i]; 
+        CHECK(target_entry.timestamp == 0);
+        CHECK(target_entry.fail_message == NULL);
+        CHECK(target_entry.fail_value == 0);
     }
 }
 
@@ -112,6 +96,21 @@ void CHECK_ALL_LOGS_ARE_CLEAR(void)
     for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
         CHECK_LOG_IS_CLEAR(log_indices_array[i]);
     }
+}
+
+void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
+{
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
+}
+
+struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
+
+    return dummyEntry;
 }
 
 }
