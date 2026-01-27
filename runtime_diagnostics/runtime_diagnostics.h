@@ -20,7 +20,6 @@ struct circular_buffer {
     struct log_entry *log_entries;
     uint32_t size;
     uint32_t head;
-    uint32_t tail;
     uint32_t count;
 };
 
@@ -53,5 +52,6 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value);
 
 void set_error_handler_function(void (*handler_function)(void));
+void printf_telemetry_log(void);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

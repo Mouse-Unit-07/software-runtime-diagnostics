@@ -5,7 +5,7 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- does calling RUNTIME_ERROR call the error callback function when it's set?
+- does the backend print function print all logs?
 - can you keep pushing to the buffer until capacity is reached?
 - is the right behavior observed in response to reaching capacity for:
     - warning- assert the error flag and call the error callback
@@ -21,9 +21,11 @@
 extern "C" {
   #include <stdint.h>
   #include "runtime_diagnostics.h"
+  #include <inttypes.h>
 }
 
 #include <cstdint>
+#include <cstdio>
 #include <CppUTest/TestHarness.h>
 
 /*============================================================================*/
@@ -43,6 +45,8 @@ extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 extern volatile bool runtime_error_asserted;
 
 volatile bool dummyErrorCallbackFunctionCalled = false;
+
+static FILE *saved_stdout = nullptr;
 
 /*============================================================================*/
 /*                             Private Definitions                            */
@@ -116,6 +120,22 @@ struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_messag
 void dummyErrorCallbackFunction(void)
 {
     dummyErrorCallbackFunctionCalled = true;
+}
+
+void redirect_stdout(const char *filename)
+{
+    fflush(stdout);
+    saved_stdout = freopen(filename, "w", stdout);
+    CHECK(saved_stdout != nullptr);
+}
+
+void restore_stdout(void)
+{
+    fflush(stdout);
+    CHECK(saved_stdout != nullptr);
+    if (saved_stdout) {
+        freopen("CON", "w", stdout);
+    }
 }
 
 }
@@ -204,7 +224,7 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
 {
     struct log_entry dummyEntries[3] = {0};
     for (uint32_t i = 0; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(TELEMETRY_INDEX, dummyEntries);
 }
@@ -213,7 +233,7 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToWarningLog)
 {
     struct log_entry dummyEntries[3] = {0};
     for (uint32_t i = 0; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(WARNING_INDEX, dummyEntries);
 }
@@ -222,7 +242,7 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToErrorLog)
 {
     struct log_entry dummyEntries[3] = {0};
     for (uint32_t i = 0; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(ERROR_INDEX, dummyEntries);
 }
@@ -240,4 +260,31 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
     addOneEntry(ERROR_INDEX,
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
     CHECK(dummyErrorCallbackFunctionCalled == true);
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
+{
+    for (uint32_t i = 0; i < 3; i++) {
+        addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "dummy message", i + 1));
+    }
+
+    redirect_stdout("test_output.txt");
+    printf_telemetry_log();
+    restore_stdout();
+    FILE *file = fopen("test_output.txt", "r");
+    CHECK(file != nullptr);
+
+    char actual_log_entry[256]; //arbitrary buffer size- individual log entries shouldn't be this long
+    char expected_log_entry[256];
+    uint32_t line_number = 0u;
+    while (fgets(actual_log_entry, sizeof(actual_log_entry), file) != NULL)
+    {
+        snprintf(expected_log_entry, sizeof(expected_log_entry), "%" PRIu32 " %s %" PRIu32 "\r\n",
+            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].timestamp,
+            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].fail_message,
+            circular_buffer_array[TELEMETRY_INDEX]->log_entries[line_number].fail_value
+        );
+        STRCMP_EQUAL(expected_log_entry, actual_log_entry);
+        line_number++;
+    }
 }
