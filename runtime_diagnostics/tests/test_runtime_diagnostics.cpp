@@ -32,7 +32,6 @@ extern "C" {
 extern struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE];
 extern struct log_entry warning_entries[WARNING_LOG_SIZE];
 extern struct log_entry error_entries[ERROR_LOG_SIZE];
-extern uint32_t log_sizes_array[LOG_TYPES_COUNT];
 extern enum log_types_indices log_indices_array[LOG_TYPES_COUNT];
 
 extern struct circular_buffer telemetry_cb;
@@ -84,7 +83,7 @@ void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_en
 void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
 {
     struct log_entry target_entry = {0};
-    for (uint32_t i = 0; i < log_sizes_array[log_index]; i++) {
+    for (uint32_t i = 0; i <  circular_buffer_array[log_index]->size; i++) {
         target_entry = circular_buffer_array[log_index]->log_entries[i]; 
         CHECK(target_entry.timestamp == 0);
         CHECK(target_entry.fail_message == NULL);
@@ -155,7 +154,7 @@ TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
     CHECK_LOG_IS_CLEAR(ERROR_INDEX);
 }
 
-TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnInit)
+TEST(RuntimeDiagnosticsTest, CircularBufferArrayIsInitializedOnInit)
 {
     init_runtime_diagnostics();
     
@@ -169,7 +168,7 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
     CHECK_ALL_LOGS_ARE_CLEAR();
 }
 
-TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnDeinit)
+TEST(RuntimeDiagnosticsTest, CircularBufferArrayIsInitializedOnDeinit)
 {
     deinit_runtime_diagnostics();
     

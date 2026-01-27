@@ -9,7 +9,6 @@
 /*                               Include Files                                */
 /*----------------------------------------------------------------------------*/
 #include <stdint.h>
-#include <string.h>
 #include "runtime_diagnostics/runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/

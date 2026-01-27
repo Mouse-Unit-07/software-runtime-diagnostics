@@ -25,9 +25,6 @@ struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_SIZE] = {{0}};
 struct log_entry error_entries[ERROR_LOG_SIZE] = {{0}};
 
-uint32_t log_sizes_array[LOG_TYPES_COUNT]
-        = {TELEMETRY_LOG_SIZE, WARNING_LOG_SIZE, ERROR_LOG_SIZE};
-
 enum log_types_indices log_indices_array[LOG_TYPES_COUNT]
         = {TELEMETRY_INDEX, WARNING_INDEX, ERROR_INDEX};
 
@@ -64,7 +61,7 @@ static void reset_all_logs(void)
 {
     for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++)
     {
-        memset(circular_buffer_array[i]->log_entries, 0, sizeof(struct log_entry) * log_sizes_array[i]);
+        memset(circular_buffer_array[i]->log_entries, 0, sizeof(struct log_entry) * circular_buffer_array[i]->size);
         reset_circular_buffer(circular_buffer_array[i]);
     }
 }
