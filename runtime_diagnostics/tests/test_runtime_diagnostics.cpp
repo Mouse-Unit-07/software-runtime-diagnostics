@@ -71,15 +71,8 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry 
 {
     addOneEntry(log_index, expected);
     
-    CHECK_LOG_ENTRY_EQUAL(expected, circular_buffer_array[log_index]->log_entries[0]);
-}
-
-void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_entry *expected)
-{
-    for (uint32_t i{0}; i < 3; i++) {
-        addOneEntry(log_index, expected[i]);
-        CHECK_LOG_ENTRY_EQUAL(expected[i], circular_buffer_array[log_index]->log_entries[i]);
-    }
+    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->count - 1);
+    CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
 }
 
 void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
@@ -261,31 +254,34 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
 }
 
-TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
+TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i{0}; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1);
+    CHECK(circular_buffer_array[TELEMETRY_INDEX]->size != 0);
+
+    uint32_t n{circular_buffer_array[TELEMETRY_INDEX]->size - 1};
+    for (uint32_t i{0}; i < n; i++) {
+        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
-    ADD_THREE_ENTRIES_AND_CHECK(TELEMETRY_INDEX, dummyEntries);
 }
 
-TEST(RuntimeDiagnosticsTest, AddThreeEntriesToWarningLog)
+TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToWarningLog)
 {
-    struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i{0}; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1);
+    CHECK(circular_buffer_array[WARNING_INDEX]->size != 0);
+
+    uint32_t n{circular_buffer_array[WARNING_INDEX]->size - 1};
+    for (uint32_t i{0}; i < n; i++) {
+        ADD_ONE_ENTRY_AND_CHECK(WARNING_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
     }
-    ADD_THREE_ENTRIES_AND_CHECK(WARNING_INDEX, dummyEntries);
 }
 
-TEST(RuntimeDiagnosticsTest, AddThreeEntriesToErrorLog)
+TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToErrorLog)
 {
-    struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i{0}; i < 3; i++) {
-        dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error msg", i + 1);
+    CHECK(circular_buffer_array[ERROR_INDEX]->size != 0);
+
+    uint32_t n{circular_buffer_array[ERROR_INDEX]->size - 1};
+    for (uint32_t i{0}; i < n; i++) {
+        ADD_ONE_ENTRY_AND_CHECK(ERROR_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
     }
-    ADD_THREE_ENTRIES_AND_CHECK(ERROR_INDEX, dummyEntries);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
