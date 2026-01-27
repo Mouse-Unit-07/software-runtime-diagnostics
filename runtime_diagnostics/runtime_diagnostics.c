@@ -23,8 +23,10 @@
 struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_SIZE] = {{0}};
 struct log_entry error_entries[ERROR_LOG_SIZE] = {{0}};
-uint32_t log_sizes_array[LOG_TYPES_COUNT] 
+uint32_t log_sizes_array[LOG_TYPES_COUNT]
         = {TELEMETRY_LOG_SIZE, WARNING_LOG_SIZE, ERROR_LOG_SIZE};
+enum log_types_indices log_indices_array[LOG_TYPES_COUNT]
+        = {TELEMETRY_INDEX, WARNING_INDEX, ERROR_INDEX};
 
 struct circular_buffer telemetry_cb \
         = {telemetry_entries, TELEMETRY_LOG_SIZE, 0, 0, 0};

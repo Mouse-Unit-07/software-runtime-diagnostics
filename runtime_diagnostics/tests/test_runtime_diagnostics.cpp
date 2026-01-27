@@ -37,6 +37,7 @@ extern struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE];
 extern struct log_entry warning_entries[WARNING_LOG_SIZE];
 extern struct log_entry error_entries[ERROR_LOG_SIZE];
 extern uint32_t log_sizes_array[LOG_TYPES_COUNT];
+extern enum log_types_indices log_indices_array[LOG_TYPES_COUNT];
 
 extern struct circular_buffer telemetry_cb;
 extern struct circular_buffer warning_cb;
@@ -141,6 +142,33 @@ TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnInit)
     
     for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
         CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
+}
+
+TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
+{
+    init_runtime_diagnostics();
+    
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK_LOG_IS_CLEAR(log_indices_array[i]);
+    }
+}
+
+TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnDeinit)
+{
+    deinit_runtime_diagnostics();
+    
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
+}
+
+TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
+{
+    deinit_runtime_diagnostics();
+    
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK_LOG_IS_CLEAR(log_indices_array[i]);
     }
 }
 
