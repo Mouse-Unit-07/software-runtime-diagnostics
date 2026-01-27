@@ -5,7 +5,6 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- does the backend print function print all logs?
 - can you keep pushing to the buffer until capacity is reached?
 - is the right behavior observed in response to reaching capacity for:
     - warning- assert the error flag and call the error callback
@@ -310,7 +309,23 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 {
     for (uint32_t i = 0; i < 3; i++) {
-        addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "dummy message", i + 1));
+        addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
+{
+    for (uint32_t i = 0; i < 3; i++) {
+        addOneEntry(WARNING_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning message", i + 1));
+    }
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
+{
+    for (uint32_t i = 0; i < 3; i++) {
+        addOneEntry(ERROR_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error message", i + 1));
+    }
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_INDEX);
 }

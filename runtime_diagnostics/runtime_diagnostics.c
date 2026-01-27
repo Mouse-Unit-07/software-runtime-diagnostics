@@ -157,12 +157,12 @@ void printf_telemetry_log(void)
 
 void printf_warning_log(void)
 {
-
+    printf_log(WARNING_INDEX);
 }
 
 void printf_error_log(void)
 {
-        
+    printf_log(ERROR_INDEX);
 }
 
 /*----------------------------------------------------------------------------*/
