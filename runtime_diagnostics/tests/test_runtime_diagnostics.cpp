@@ -5,8 +5,6 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- does the init/deinit functions do what they're supposed to do?
-- does the logging function continue to append the right data when called continuously?
 - does calling RUNTIME_ERROR assert the error flag?
 - is the error callback function not called when it's not set yet?
 - does calling RUNTIME_ERROR call the error callback function when it's set?
@@ -100,6 +98,20 @@ void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_en
     }
 }
 
+void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
+{
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
+}
+
+void CHECK_ALL_LOGS_ARE_CLEAR(void)
+{
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK_LOG_IS_CLEAR(log_indices_array[i]);
+    }
+}
+
 }
 
 /*============================================================================*/
@@ -140,36 +152,28 @@ TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnInit)
 {
     init_runtime_diagnostics();
     
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
-        CHECK(circular_buffer_array[i]->log_entries != NULL);
-    }
+    CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS();
 }
 
 TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
 {
     init_runtime_diagnostics();
     
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
-        CHECK_LOG_IS_CLEAR(log_indices_array[i]);
-    }
+    CHECK_ALL_LOGS_ARE_CLEAR();
 }
 
 TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnDeinit)
 {
     deinit_runtime_diagnostics();
     
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
-        CHECK(circular_buffer_array[i]->log_entries != NULL);
-    }
+    CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS();
 }
 
 TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 {
     deinit_runtime_diagnostics();
     
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
-        CHECK_LOG_IS_CLEAR(log_indices_array[i]);
-    }
+    CHECK_ALL_LOGS_ARE_CLEAR();
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLog)
