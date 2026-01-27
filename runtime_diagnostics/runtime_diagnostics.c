@@ -10,6 +10,7 @@
 /*----------------------------------------------------------------------------*/
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 #include "runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/
@@ -23,8 +24,10 @@
 struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_SIZE] = {{0}};
 struct log_entry error_entries[ERROR_LOG_SIZE] = {{0}};
+
 uint32_t log_sizes_array[LOG_TYPES_COUNT]
         = {TELEMETRY_LOG_SIZE, WARNING_LOG_SIZE, ERROR_LOG_SIZE};
+
 enum log_types_indices log_indices_array[LOG_TYPES_COUNT]
         = {TELEMETRY_INDEX, WARNING_INDEX, ERROR_INDEX};
 
@@ -37,6 +40,8 @@ struct circular_buffer error_cb \
 
 struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT] \
         = { &telemetry_cb, &warning_cb, &error_cb };
+
+volatile bool runtime_error_asserted = false;
 
 /*----------------------------------------------------------------------------*/
 /*                         Interrupt Service Routines                         */
@@ -110,6 +115,8 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
 void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
+    runtime_error_asserted = true;
+
     add_entry_to_log(ERROR_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
 }

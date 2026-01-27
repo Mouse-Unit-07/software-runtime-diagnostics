@@ -43,6 +43,8 @@ extern struct circular_buffer error_cb;
 
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 
+extern volatile bool runtime_error_asserted;
+
 /*============================================================================*/
 /*                             Private Definitions                            */
 /*============================================================================*/
@@ -219,4 +221,11 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToErrorLog)
         dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(ERROR_INDEX, dummyEntries);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
+{
+    addOneEntry(ERROR_INDEX,
+        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    CHECK(runtime_error_asserted == true);
 }
