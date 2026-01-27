@@ -34,23 +34,20 @@ extern struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE];
 extern struct log_entry warning_entries[WARNING_LOG_SIZE];
 extern struct log_entry error_entries[ERROR_LOG_SIZE];
 extern enum log_types_indices log_indices_array[LOG_TYPES_COUNT];
-
 extern struct circular_buffer telemetry_cb;
 extern struct circular_buffer warning_cb;
 extern struct circular_buffer error_cb;
-
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
-
 extern volatile bool runtime_error_asserted;
 
-volatile bool dummyErrorCallbackFunctionCalled = false;
+volatile bool dummyErrorCallbackFunctionCalled{false};
 
-static FILE *standardOutput = nullptr;
+static FILE *standardOutput{nullptr};
 
 void (*runtime_functions[LOG_TYPES_COUNT])(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value) = {RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
-void (*print_log_functions[LOG_TYPES_COUNT])(void) \
-        = {printf_telemetry_log, printf_warning_log, printf_error_log};
+        uint32_t fail_value){RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
+
+void (*print_log_functions[LOG_TYPES_COUNT])(void){printf_telemetry_log, printf_warning_log, printf_error_log};
 
 /*============================================================================*/
 /*                             Private Definitions                            */
@@ -79,7 +76,7 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry 
 
 void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_entry *expected)
 {
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         addOneEntry(log_index, expected[i]);
         CHECK_LOG_ENTRY_EQUAL(expected[i], circular_buffer_array[log_index]->log_entries[i]);
     }
@@ -87,8 +84,8 @@ void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_en
 
 void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
 {
-    struct log_entry target_entry = {0};
-    for (uint32_t i = 0; i <  circular_buffer_array[log_index]->size; i++) {
+    struct log_entry target_entry{0};
+    for (uint32_t i{0}; i <  circular_buffer_array[log_index]->size; i++) {
         target_entry = circular_buffer_array[log_index]->log_entries[i]; 
         CHECK(target_entry.timestamp == 0);
         CHECK(target_entry.fail_message == NULL);
@@ -98,14 +95,14 @@ void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
 
 void CHECK_ALL_LOGS_ARE_CLEAR(void)
 {
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
         CHECK_LOG_IS_CLEAR(log_indices_array[i]);
     }
 }
 
 void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
 {
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
         CHECK(circular_buffer_array[i]->log_entries != NULL);
     }
 }
@@ -141,7 +138,7 @@ void restoreStdout(void)
 
 bool isFileEmpty(FILE *file)
 {
-    int c = fgetc(file);
+    int c{fgetc(file)};
     if (c == EOF) {
         return true;
     }
@@ -171,11 +168,11 @@ void COMPARE_LOG_AND_FILE(FILE *file, enum log_types_indices log_index)
 
 void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_types_indices log_index)
 {
-    const char *TEST_FILENAME = "test_output.txt";
+    const char *TEST_FILENAME{"test_output.txt"};
     redirectStdout(TEST_FILENAME);
     print_log_functions[log_index]();
     restoreStdout();
-    FILE *file = fopen(TEST_FILENAME, "r");
+    FILE *file{fopen(TEST_FILENAME, "r")};
     CHECK(file != nullptr);
     CHECK(!isFileEmpty(file));
 
@@ -267,7 +264,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
 TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
 {
     struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(TELEMETRY_INDEX, dummyEntries);
@@ -276,7 +273,7 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
 TEST(RuntimeDiagnosticsTest, AddThreeEntriesToWarningLog)
 {
     struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(WARNING_INDEX, dummyEntries);
@@ -285,7 +282,7 @@ TEST(RuntimeDiagnosticsTest, AddThreeEntriesToWarningLog)
 TEST(RuntimeDiagnosticsTest, AddThreeEntriesToErrorLog)
 {
     struct log_entry dummyEntries[3] = {0};
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         dummyEntries[i] = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error msg", i + 1);
     }
     ADD_THREE_ENTRIES_AND_CHECK(ERROR_INDEX, dummyEntries);
@@ -308,7 +305,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         addOneEntry(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_INDEX);
@@ -316,7 +313,7 @@ TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 
 TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         addOneEntry(WARNING_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_INDEX);
@@ -324,7 +321,7 @@ TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 
 TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i{0}; i < 3; i++) {
         addOneEntry(ERROR_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: error message", i + 1));
     }
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_INDEX);
