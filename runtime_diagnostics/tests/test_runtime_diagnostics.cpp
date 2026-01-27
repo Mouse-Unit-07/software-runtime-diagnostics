@@ -25,11 +25,24 @@
 extern "C" {
   #include <stdint.h>
   #include "runtime_diagnostics.h"
-  #include "runtime_diagnostics_test_access.h"
 }
 
 #include <cstdint>
 #include <CppUTest/TestHarness.h>
+
+/*============================================================================*/
+/*                                   Globals                                  */
+/*============================================================================*/
+extern struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE];
+extern struct log_entry warning_entries[WARNING_LOG_SIZE];
+extern struct log_entry error_entries[ERROR_LOG_SIZE];
+extern uint32_t log_sizes_array[LOG_TYPES_COUNT];
+
+extern struct circular_buffer telemetry_cb;
+extern struct circular_buffer warning_cb;
+extern struct circular_buffer error_cb;
+
+extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 
 /*============================================================================*/
 /*                             Private Definitions                            */
@@ -37,11 +50,53 @@ extern "C" {
 namespace
 {
 
+void (*runtime_functions[LOG_TYPES_COUNT])(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value) = {RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
+
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
     CHECK_EQUAL(expected.timestamp, actual.timestamp);
     STRCMP_EQUAL(expected.fail_message, actual.fail_message);
     CHECK_EQUAL(expected.fail_value, actual.fail_value);
+}
+
+void CHECK_LOG_IS_CLEAR(enum log_types_indices log_index)
+{
+    struct log_entry target_entry = {0};
+    for (uint32_t i = 0; i < log_sizes_array[log_index]; i++) {
+        target_entry = circular_buffer_array[log_index]->log_entries[i]; 
+        CHECK(target_entry.timestamp == 0);
+        CHECK(target_entry.fail_message == NULL);
+        CHECK(target_entry.fail_value == 0);
+    }
+}
+
+struct log_entry createOneDummyEntry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    struct log_entry dummyEntry = {timestamp, fail_message, fail_value};
+
+    return dummyEntry;
+}
+
+void addOneEntry(enum log_types_indices log_index, struct log_entry expected)
+{
+    runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
+}
+
+void ADD_ONE_ENTRY_AND_CHECK(enum log_types_indices log_index, struct log_entry expected)
+{
+    addOneEntry(log_index, expected);
+
+    CHECK_LOG_ENTRY_EQUAL(expected, circular_buffer_array[log_index]->log_entries[0]);
+}
+
+void ADD_THREE_ENTRIES_AND_CHECK(enum log_types_indices log_index, struct log_entry *expected)
+{
+    for (uint32_t i = 0; i < 3; i++) {
+        addOneEntry(log_index, expected[i]);
+        CHECK_LOG_ENTRY_EQUAL(expected[i], circular_buffer_array[log_index]->log_entries[i]);
+    }
 }
 
 }
@@ -67,66 +122,69 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 /*============================================================================*/
 TEST(RuntimeDiagnosticsTest, TelemetryLogIsInitializedToZero)
 {
-    struct log_entry *actual_telemetry_log = get_telemetry_log();
-    uint8_t expected[sizeof(*actual_telemetry_log)] = {0};
-
-    MEMCMP_EQUAL(expected, actual_telemetry_log, sizeof(*actual_telemetry_log));
+    CHECK_LOG_IS_CLEAR(TELEMETRY_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, WarningLogIsInitializedToZero)
 {
-    struct log_entry *actual_warning_log = get_warning_log();
-    uint8_t expected[sizeof(*actual_warning_log)] = {0};
-
-    MEMCMP_EQUAL(expected, actual_warning_log, sizeof(*actual_warning_log));
+    CHECK_LOG_IS_CLEAR(WARNING_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
 {
-    struct log_entry *actual_error_log = get_error_log();
-    uint8_t expected[sizeof(*actual_error_log)] = {0};
+    CHECK_LOG_IS_CLEAR(ERROR_INDEX);
+}
 
-    MEMCMP_EQUAL(expected, actual_error_log, sizeof(*actual_error_log));
+TEST(RuntimeDiagnosticsTest, LogStructArrayIsInitializedOnInit)
+{
+    init_runtime_diagnostics();
+    
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++) {
+        CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLog)
 {
-    struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected = { 1, "test_runtime_diagnostics.cpp: new telemetry", 2 };
-    RUNTIME_TELEMETRY(expected.timestamp, expected.fail_message, expected.fail_value);
-
-    CHECK_LOG_ENTRY_EQUAL(expected, actual_telemetry_log[0]);
+    ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX,
+        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: telemetry msg", 2));
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
 {
-    struct log_entry *actual_warning_log = get_warning_log();
-    struct log_entry expected = { 3, "test_runtime_diagnostics.cpp: new warning", 4 };
-    RUNTIME_WARNING(expected.timestamp, expected.fail_message, expected.fail_value);
-
-    CHECK_LOG_ENTRY_EQUAL(expected, actual_warning_log[0]);
+    ADD_ONE_ENTRY_AND_CHECK(WARNING_INDEX,
+        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: warning message", 2));
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
 {
-    struct log_entry *actual_error_log = get_error_log();
-    struct log_entry expected = { 5, "test_runtime_diagnostics.cpp: new error", 6 };
-    RUNTIME_ERROR(expected.timestamp, expected.fail_message, expected.fail_value);
-
-    CHECK_LOG_ENTRY_EQUAL(expected, actual_error_log[0]);
+    ADD_ONE_ENTRY_AND_CHECK(ERROR_INDEX,
+        createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
 }
 
 TEST(RuntimeDiagnosticsTest, AddThreeEntriesToTelemetryLog)
 {
-    struct log_entry *actual_telemetry_log = get_telemetry_log();
-    struct log_entry expected_1 = { 7, "first telemetry", 8 };
-    struct log_entry expected_2 = { 9, "second telemetry", 10 };
-    struct log_entry expected_3 = { 11, "third telemetry", 12 };
-    RUNTIME_TELEMETRY(expected_1.timestamp, expected_1.fail_message, expected_1.fail_value);
-    RUNTIME_TELEMETRY(expected_2.timestamp, expected_2.fail_message, expected_2.fail_value);
-    RUNTIME_TELEMETRY(expected_3.timestamp, expected_3.fail_message, expected_3.fail_value);
+    struct log_entry dummyEntries[3] = {0};
+    for (uint32_t i = 0; i < 3; i++) {
+        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+    }
+    ADD_THREE_ENTRIES_AND_CHECK(TELEMETRY_INDEX, dummyEntries);
+}
 
-    CHECK_LOG_ENTRY_EQUAL(expected_1, actual_telemetry_log[0]);
-    CHECK_LOG_ENTRY_EQUAL(expected_2, actual_telemetry_log[1]);
-    CHECK_LOG_ENTRY_EQUAL(expected_3, actual_telemetry_log[2]);
+TEST(RuntimeDiagnosticsTest, AddThreeEntriesToWarningLog)
+{
+    struct log_entry dummyEntries[3] = {0};
+    for (uint32_t i = 0; i < 3; i++) {
+        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+    }
+    ADD_THREE_ENTRIES_AND_CHECK(WARNING_INDEX, dummyEntries);
+}
+
+TEST(RuntimeDiagnosticsTest, AddThreeEntriesToErrorLog)
+{
+    struct log_entry dummyEntries[3] = {0};
+    for (uint32_t i = 0; i < 3; i++) {
+        dummyEntries[i] = createOneDummyEntry(i, "", i + 1);
+    }
+    ADD_THREE_ENTRIES_AND_CHECK(ERROR_INDEX, dummyEntries);
 }
