@@ -75,7 +75,9 @@ static void add_entry_to_log(enum log_types_indices log_index,
     memcpy(target_entry, &new_entry, sizeof(new_entry));
 
     target_cb->head = (target_cb->head + 1) % target_cb->size;
-    target_cb->count++;
+    if (target_cb->count != target_cb->size) {
+        target_cb->count++;
+    }
 }
 
 static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,

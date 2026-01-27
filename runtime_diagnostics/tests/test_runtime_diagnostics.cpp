@@ -236,51 +236,82 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
     CHECK_ALL_LOGS_ARE_CLEAR();
 }
 
-TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLog)
+TEST(RuntimeDiagnosticsTest, CheckThatNoBuffersHaveZeroSize)
+{
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
+        CHECK(circular_buffer_array[log_indices_array[i]]->size != 0);
+    }
+}
+
+TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX,
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: telemetry msg", 2));
+    
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
+        if (log_indices_array[i] != TELEMETRY_INDEX) {
+            CHECK_LOG_IS_CLEAR(log_indices_array[i]);
+        }
+    }
 }
 
-TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLog)
+TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(WARNING_INDEX,
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: warning message", 2));
+    
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
+        if (log_indices_array[i] != WARNING_INDEX) {
+            CHECK_LOG_IS_CLEAR(log_indices_array[i]);
+        }
+    }
 }
 
-TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLog)
+TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
     ADD_ONE_ENTRY_AND_CHECK(ERROR_INDEX,
         createOneDummyEntry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    
+    for (uint32_t i{0}; i < LOG_TYPES_COUNT; i++) {
+        if (log_indices_array[i] != ERROR_INDEX) {
+            CHECK_LOG_IS_CLEAR(log_indices_array[i]);
+        }
+    }
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    CHECK(circular_buffer_array[TELEMETRY_INDEX]->size != 0);
-
     uint32_t n{circular_buffer_array[TELEMETRY_INDEX]->size - 1};
     for (uint32_t i{0}; i < n; i++) {
         ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
-TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToWarningLog)
+TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    CHECK(circular_buffer_array[WARNING_INDEX]->size != 0);
-
-    uint32_t n{circular_buffer_array[WARNING_INDEX]->size - 1};
+    uint32_t n{circular_buffer_array[TELEMETRY_INDEX]->size};
     for (uint32_t i{0}; i < n; i++) {
-        ADD_ONE_ENTRY_AND_CHECK(WARNING_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
+        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
-TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToErrorLog)
+TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
-    CHECK(circular_buffer_array[ERROR_INDEX]->size != 0);
+    struct log_entry expected[TELEMETRY_LOG_SIZE] = {{0}};
+    struct log_entry new_entry{0};
+    uint32_t totalNewEntriesCount = TELEMETRY_LOG_SIZE * 2;
+    uint32_t startRecordingIndex = totalNewEntriesCount - TELEMETRY_LOG_SIZE;
 
-    uint32_t n{circular_buffer_array[ERROR_INDEX]->size - 1};
-    for (uint32_t i{0}; i < n; i++) {
-        ADD_ONE_ENTRY_AND_CHECK(ERROR_INDEX, createOneDummyEntry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
+    for (uint32_t i{0}; i < totalNewEntriesCount; i++) {
+        new_entry = createOneDummyEntry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1);
+        addOneEntry(TELEMETRY_INDEX, new_entry);
+        if (i >= startRecordingIndex) {
+            expected[i - startRecordingIndex] = new_entry;
+        }
+    }
+    for (uint32_t i{0}; i < TELEMETRY_LOG_SIZE; i++) {
+        struct log_entry actual_entry = get_entry_at_index(TELEMETRY_INDEX, i);
+        CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
     }
 }
 
