@@ -5,7 +5,6 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- can you keep pushing to the buffer until capacity is reached?
 - is the right behavior observed in response to reaching capacity for:
     - warning- assert the error flag and call the error callback
 - does pushing past the buffer capacity exhibit the right behavior?:
@@ -215,12 +214,14 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 {
     void setup() override
     {
+        dummy_error_callback_called = false;
         init_runtime_diagnostics();
     }
 
     void teardown() override
     {
         deinit_runtime_diagnostics();
+        dummy_error_callback_called = false;
     }
 };
 
@@ -337,6 +338,16 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
     set_error_handler_function(dummy_callback_function);
     add_one_entry(ERROR_INDEX,
         create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
+    CHECK(dummy_error_callback_called == true);
+}
+
+TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
+{
+    set_error_handler_function(dummy_callback_function);
+    for (uint32_t i{0}; i < WARNING_LOG_SIZE; i++) {
+        add_one_entry(WARNING_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
+    }
+    CHECK(runtime_error_asserted == true);
     CHECK(dummy_error_callback_called == true);
 }
 

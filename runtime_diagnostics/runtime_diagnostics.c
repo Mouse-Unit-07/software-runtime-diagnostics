@@ -60,6 +60,9 @@ static void reset_circular_buffer(struct circular_buffer *cb)
 
 static void reset_all_logs(void)
 {
+    runtime_error_asserted = false;
+    user_error_handler_set = false;
+    
     for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++)
     {
         memset(circular_buffer_array[i]->log_entries, 0, sizeof(struct log_entry) * circular_buffer_array[i]->size);
@@ -106,6 +109,20 @@ static void printf_log(enum log_types_indices log_index)
     }
 }
 
+void set_error_flag_and_call_handler(void)
+{
+    runtime_error_asserted = true;
+
+    if (user_error_handler_set) {
+        user_error_handler();
+    }
+}
+
+bool is_log_full(enum log_types_indices log_index)
+{
+    return circular_buffer_array[log_index]->size == circular_buffer_array[log_index]->count;
+}
+
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
@@ -117,6 +134,12 @@ void init_runtime_diagnostics()
 void deinit_runtime_diagnostics()
 {
     reset_all_logs();
+}
+
+void set_error_handler_function(void (*handler_function)(void))
+{
+    user_error_handler = handler_function;
+    user_error_handler_set = true;
 }
 
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
@@ -131,25 +154,19 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
 {
     add_entry_to_log(WARNING_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
+
+    if (is_log_full(WARNING_INDEX)) {
+        set_error_flag_and_call_handler();
+    }
 }
 
 void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    runtime_error_asserted = true;
-    
     add_entry_to_log(ERROR_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
-    
-    if (user_error_handler_set) {
-        user_error_handler();
-    }
-}
 
-void set_error_handler_function(void (*handler_function)(void))
-{
-    user_error_handler = handler_function;
-    user_error_handler_set = true;
+    set_error_flag_and_call_handler();
 }
 
 void printf_telemetry_log(void)
