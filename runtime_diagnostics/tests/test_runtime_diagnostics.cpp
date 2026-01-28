@@ -4,9 +4,6 @@
 /* Test implementation for runtime_diagnostics.c                              */
 /*                                                                            */
 /*============================================================================*/
-/* scratch notes- a list of tests:
-- can the log saved from the first runtime error be printed?
-*/
 
 /*============================================================================*/
 /*                               Include Files                                */

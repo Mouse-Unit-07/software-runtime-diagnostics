@@ -48,15 +48,17 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
 void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value);
 
-void init_runtime_diagnostics();
-void deinit_runtime_diagnostics();
 void set_error_handler_function(void (*handler_function)(void));
 void printf_telemetry_log(void);
 void printf_warning_log(void);
 void printf_error_log(void);
 void printf_first_runtime_error_entry(void);
 
-//private helper for test
+/* init and deinit don't need to be called- they're for testing */
+void init_runtime_diagnostics();
+void deinit_runtime_diagnostics();
+
+/* private helper, but exposed for testing */
 struct log_entry get_entry_at_index(enum log_category log_index, 
         uint32_t entry_index);
 

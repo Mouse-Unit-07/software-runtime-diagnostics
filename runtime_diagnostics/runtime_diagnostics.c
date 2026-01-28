@@ -190,18 +190,6 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
     runtime_error_procedure(new_entry);
 }
 
-void init_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
-void deinit_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
 void set_error_handler_function(void (*handler_function)(void))
 {
     user_error_handler = handler_function;
@@ -226,6 +214,18 @@ void printf_error_log(void)
 void printf_first_runtime_error_entry(void)
 {
     print_log_entry(first_runtime_error_cause);
+}
+
+void init_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
+}
+
+void deinit_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
 }
 
 /*----------------------------------------------------------------------------*/
