@@ -453,3 +453,21 @@ TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
     add_n_entries(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY - 1);
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX);
 }
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedOnOverflow)
+{
+    overflow_log(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenOnOverflow)
+{
+    overflow_log(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenOnOverflow)
+{
+    overflow_log(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX);
+}
