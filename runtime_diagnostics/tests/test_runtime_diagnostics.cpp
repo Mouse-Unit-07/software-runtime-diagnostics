@@ -248,7 +248,7 @@ TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
     CHECK_LOG_IS_CLEAR(ERROR_LOG_INDEX);
 }
 
-TEST(RuntimeDiagnosticsTest, CircularBufferArrayIsInitializedOnInit)
+TEST(RuntimeDiagnosticsTest, NoCircularBufferHasNullBufferOnInit)
 {
     init_runtime_diagnostics();
     
@@ -262,7 +262,7 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
     CHECK_ALL_LOGS_ARE_CLEAR();
 }
 
-TEST(RuntimeDiagnosticsTest, CircularBufferArrayIsInitializedOnDeinit)
+TEST(RuntimeDiagnosticsTest, NoCircularBufferHasNullBufferOnDeinit)
 {
     deinit_runtime_diagnostics();
     
@@ -290,8 +290,10 @@ TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnDeinit)
     CHECK_ALL_FLAGS();
 }
 
-TEST(RuntimeDiagnosticsTest, CheckThatNoBuffersHaveZeroSize)
+TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroSizeOnInit)
 {
+    init_runtime_diagnostics();
+
     for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
         CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
     }
