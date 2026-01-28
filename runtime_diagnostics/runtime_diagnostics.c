@@ -125,7 +125,7 @@ static void reset_circular_buffer(enum log_category log_index)
 
 static void reset_all_circular_buffers(void)
 {
-    for (uint32_t i = 0; i < LOG_CATEGORIES_COUNT; i++)
+    for (uint32_t i = 0u; i < LOG_CATEGORIES_COUNT; i++)
     {
         reset_circular_buffer(log_category_array[i]);
     }
@@ -154,7 +154,7 @@ static void print_log_entry(struct log_entry entry)
 
 static void printf_log(enum log_category log_index)
 {
-    for (uint32_t i = 0; i < circular_buffer_array[log_index]->current_size; i++) {
+    for (uint32_t i = 0u; i < circular_buffer_array[log_index]->current_size; i++) {
         struct log_entry entry = get_entry_at_index(log_index, i);
         print_log_entry(entry);
     }

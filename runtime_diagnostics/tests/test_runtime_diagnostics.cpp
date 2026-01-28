@@ -50,7 +50,7 @@ namespace
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 {
     struct log_entry target_entry{0};
-    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
+    for (uint32_t i{0u}; i < circular_buffer_array[log_index]->log_capacity; i++) {
         target_entry = circular_buffer_array[log_index]->log_entries[i]; 
         CHECK(target_entry.timestamp == 0);
         CHECK(target_entry.fail_message == NULL);
@@ -60,14 +60,14 @@ void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 
 void CHECK_ALL_LOGS_ARE_CLEAR(void)
 {
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+    for (uint32_t i{0u}; i < LOG_CATEGORIES_COUNT; i++) {
         CHECK_LOG_IS_CLEAR(log_category_array[i]);
     }
 }
 
 void CHECK_ALL_OTHER_LOGS_ARE_CLEAR(enum log_category log_index)
 {
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+    for (uint32_t i{0u}; i < LOG_CATEGORIES_COUNT; i++) {
         if (log_category_array[i] != log_index) {
             CHECK_LOG_IS_CLEAR(log_category_array[i]);
         }
@@ -76,7 +76,7 @@ void CHECK_ALL_OTHER_LOGS_ARE_CLEAR(enum log_category log_index)
 
 void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
 {
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+    for (uint32_t i{0u}; i < LOG_CATEGORIES_COUNT; i++) {
         CHECK(circular_buffer_array[i]->log_entries != NULL);
     }
 }
@@ -89,7 +89,7 @@ void CHECK_ALL_FLAGS(void)
 
 void CHECK_FOR_ZERO_CAPACITY_LOGS(void)
 {
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+    for (uint32_t i{0u}; i < LOG_CATEGORIES_COUNT; i++) {
         CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
     }
 }
@@ -102,14 +102,14 @@ void add_one_entry(enum log_category log_index, struct log_entry expected)
 struct log_entry create_one_dummy_entry(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    struct log_entry dummy_entry = {timestamp, fail_message, fail_value};
+    struct log_entry dummy_entry{timestamp, fail_message, fail_value};
 
     return dummy_entry;
 }
 
 void add_n_entries(enum log_category log_index, uint32_t n)
 {
-    for (uint32_t i{0}; i < n; i++) {
+    for (uint32_t i{0u}; i < n; i++) {
         add_one_entry(log_index, create_one_dummy_entry(i, "some_file.c: msg", i + 1));
     }
 }
@@ -118,7 +118,7 @@ void overflow_log(enum log_category log_index, uint32_t overflow_entries_count)
 {
     struct circular_buffer *target_cb{circular_buffer_array[log_index]};
     uint32_t log_capacity{target_cb->log_capacity};
-    uint32_t new_entries_count = log_capacity + overflow_entries_count;
+    uint32_t new_entries_count{log_capacity + overflow_entries_count};
     
     add_n_entries(log_index, new_entries_count);
 }
@@ -128,11 +128,11 @@ void overflow_log_and_create_expected(enum log_category log_index, struct log_en
 {
     struct circular_buffer *target_cb{circular_buffer_array[log_index]};
     uint32_t log_capacity{target_cb->log_capacity};
-    uint32_t new_entries_count = log_capacity + overflow_entries_count;
+    uint32_t new_entries_count{log_capacity + overflow_entries_count};
     
     uint32_t start_recording_index{new_entries_count - log_capacity};
     struct log_entry new_entry{0};
-    for (uint32_t i{0}; i < new_entries_count; i++) {
+    for (uint32_t i{0u}; i < new_entries_count; i++) {
         new_entry = create_one_dummy_entry(i, "some_file.c: some msg", i + 1);
         add_one_entry(log_index, new_entry);
         if (i >= start_recording_index) {
@@ -152,21 +152,21 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expec
 {
     add_one_entry(log_index, expected);
     
-    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1);
+    log_entry new_entry{get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1)};
     CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
 }
 
 void ADD_N_ENTRIES_AND_CHECK(enum log_category log_index, uint32_t n)
 {
-    for (uint32_t i{0}; i < n; i++) {
+    for (uint32_t i{0u}; i < n; i++) {
         ADD_ONE_ENTRY_AND_CHECK(log_index, create_one_dummy_entry(i, "some_file.c: msg", i + 1));
     }
 }
 
 void COMPARE_LOG_AND_EXPECTED(enum log_category log_index, struct log_entry *expected)
 {
-    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
-        struct log_entry actual_entry = get_entry_at_index(log_index, i);
+    for (uint32_t i{0u}; i < circular_buffer_array[log_index]->log_capacity; i++) {
+        struct log_entry actual_entry{get_entry_at_index(log_index, i)};
         CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
     }
 }
@@ -209,9 +209,9 @@ void COMPARE_LOG_AND_FILE(FILE *file, enum log_category log_index)
     char actual_log_entry[LOG_ENTRY_MAX_SIZE];
     char expected_log_entry[LOG_ENTRY_MAX_SIZE];
 
-    uint32_t entry_index = 0u;
+    uint32_t entry_index{0u};
     while (fgets(actual_log_entry, sizeof(actual_log_entry), file) != NULL) {
-        log_entry raw_entry = get_entry_at_index(log_index, entry_index);
+        log_entry raw_entry{get_entry_at_index(log_index, entry_index)};
         snprintf(expected_log_entry, sizeof(expected_log_entry), "%" PRIu32 " %s %" PRIu32 "\r\n",
             raw_entry.timestamp,
             raw_entry.fail_message,
@@ -375,8 +375,8 @@ TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
-    struct log_entry expected[TELEMETRY_LOG_CAPACITY] = {{0}};
-    uint32_t overflow_entries_count = 17; // arbitrary [prime number] overflow entries
+    struct log_entry expected[TELEMETRY_LOG_CAPACITY]{{0}};
+    uint32_t overflow_entries_count{17u}; // arbitrary [prime number] overflow entries
     
     overflow_log_and_create_expected(TELEMETRY_LOG_INDEX, expected, overflow_entries_count);
 
@@ -401,7 +401,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
 {
     set_error_handler_function(dummy_callback_function);
-    for (uint32_t i{0}; i < WARNING_LOG_CAPACITY; i++) {
+    for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
         add_one_entry(WARNING_LOG_INDEX, create_one_dummy_entry(i, "some_file.c: warning msg", i + 1));
     }
     CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
@@ -410,7 +410,7 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 {
-    struct log_entry expected = create_one_dummy_entry(1, "some_file.c: error message", 2);
+    struct log_entry expected{create_one_dummy_entry(1, "some_file.c: error message", 2)};
     add_one_entry(ERROR_LOG_INDEX, expected);
     overflow_log(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY);
     CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
@@ -419,8 +419,8 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
 {
     struct log_entry expected{0};
-    for (uint32_t i{0}; i < WARNING_LOG_CAPACITY; i++) {
-        struct log_entry new_entry = create_one_dummy_entry(i, "some_file.c: warning msg", i + 1);
+    for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
+        struct log_entry new_entry{create_one_dummy_entry(i, "some_file.c: warning msg", i + 1)};
         add_one_entry(WARNING_LOG_INDEX, new_entry);
         if (i == (WARNING_LOG_CAPACITY - 1)) {
             expected = new_entry;
@@ -469,7 +469,7 @@ TEST(RuntimeDiagnosticsTest, ErrorLogPrintedOnOverflow)
 
 TEST(RuntimeDiagnosticsTest, FirstRuntTimeErrorPrinted)
 {
-    struct log_entry expected = create_one_dummy_entry(1, "some_file.c: error message", 2);
+    struct log_entry expected{create_one_dummy_entry(1, "some_file.c: error message", 2)};
     add_one_entry(ERROR_LOG_INDEX, expected);
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX, printf_first_runtime_error_entry);
 }
