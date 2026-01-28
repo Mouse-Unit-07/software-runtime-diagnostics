@@ -70,9 +70,9 @@ void overflow_log_and_update_expected(enum log_category log_index, struct log_en
     uint32_t new_entries_count)
 {
     struct circular_buffer *target_cb{circular_buffer_array[log_index]};
-    uint32_t log_size{target_cb->size};
+    uint32_t log_capacity{target_cb->log_capacity};
     
-    uint32_t start_recording_index{new_entries_count - log_size};
+    uint32_t start_recording_index{new_entries_count - log_capacity};
     struct log_entry new_entry{0};
     for (uint32_t i{0}; i < new_entries_count; i++) {
         new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
@@ -92,7 +92,7 @@ void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 
 void COMPARE_LOG_AND_EXPECTED(enum log_category log_index, struct log_entry *expected)
 {
-    for (uint32_t i{0}; i < circular_buffer_array[log_index]->size; i++) {
+    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
         struct log_entry actual_entry = get_entry_at_index(log_index, i);
         CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
     }
@@ -109,7 +109,7 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expec
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 {
     struct log_entry target_entry{0};
-    for (uint32_t i{0}; i < circular_buffer_array[log_index]->size; i++) {
+    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
         target_entry = circular_buffer_array[log_index]->log_entries[i]; 
         CHECK(target_entry.timestamp == 0);
         CHECK(target_entry.fail_message == NULL);
@@ -293,7 +293,7 @@ TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnDeinit)
 TEST(RuntimeDiagnosticsTest, CheckThatNoBuffersHaveZeroSize)
 {
     for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
-        CHECK(circular_buffer_array[log_category_array[i]]->size != 0);
+        CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
     }
 }
 

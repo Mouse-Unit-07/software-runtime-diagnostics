@@ -18,7 +18,7 @@ struct log_entry {
 
 struct circular_buffer {
     struct log_entry *log_entries;
-    uint32_t size;
+    uint32_t log_capacity;
     uint32_t head;
     uint32_t count;
 };
