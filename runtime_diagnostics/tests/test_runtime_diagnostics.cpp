@@ -53,83 +53,6 @@ void (*print_log_functions[LOG_CATEGORIES_COUNT])(void){printf_telemetry_log, pr
 namespace
 {
 
-struct log_entry create_one_dummy_entry(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value)
-{
-    struct log_entry dummy_entry = {timestamp, fail_message, fail_value};
-
-    return dummy_entry;
-}
-
-void add_one_entry(enum log_category log_index, struct log_entry expected)
-{
-    runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
-}
-
-void add_n_entries(enum log_category log_index, uint32_t n)
-{
-    for (uint32_t i{0}; i < n; i++) {
-        add_one_entry(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
-    }
-}
-
-void overflow_log_and_create_expected(enum log_category log_index, struct log_entry *expected, 
-    uint32_t overflow_entries_count)
-{
-    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
-    uint32_t log_capacity{target_cb->log_capacity};
-    uint32_t new_entries_count = log_capacity + overflow_entries_count;
-    
-    uint32_t start_recording_index{new_entries_count - log_capacity};
-    struct log_entry new_entry{0};
-    for (uint32_t i{0}; i < new_entries_count; i++) {
-        new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
-        add_one_entry(log_index, new_entry);
-        if (i >= start_recording_index) {
-            expected[i - start_recording_index] = new_entry;
-        }
-    }
-}
-
-void overflow_log(enum log_category log_index, uint32_t overflow_entries_count)
-{
-    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
-    uint32_t log_capacity{target_cb->log_capacity};
-    uint32_t new_entries_count = log_capacity + overflow_entries_count;
-    
-    add_n_entries(log_index, new_entries_count);
-}
-
-void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
-{
-    CHECK_EQUAL(expected.timestamp, actual.timestamp);
-    STRCMP_EQUAL(expected.fail_message, actual.fail_message);
-    CHECK_EQUAL(expected.fail_value, actual.fail_value);
-}
-
-void COMPARE_LOG_AND_EXPECTED(enum log_category log_index, struct log_entry *expected)
-{
-    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
-        struct log_entry actual_entry = get_entry_at_index(log_index, i);
-        CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
-    }
-}
-
-void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expected)
-{
-    add_one_entry(log_index, expected);
-    
-    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1);
-    CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
-}
-
-void ADD_N_ENTRIES_AND_CHECK(enum log_category log_index, uint32_t n)
-{
-    for (uint32_t i{0}; i < n; i++) {
-        ADD_ONE_ENTRY_AND_CHECK(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
-    }
-}
-
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 {
     struct log_entry target_entry{0};
@@ -161,6 +84,96 @@ void CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS(void)
 {
     for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
         CHECK(circular_buffer_array[i]->log_entries != NULL);
+    }
+}
+
+void CHECK_ALL_FLAGS(void)
+{
+    CHECK(runtime_error_asserted == false);
+    CHECK(user_error_handler_set == false);
+}
+
+void CHECK_FOR_ZERO_CAPACITY_LOGS(void)
+{
+    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+        CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
+    }
+}
+
+void add_one_entry(enum log_category log_index, struct log_entry expected)
+{
+    runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
+}
+
+struct log_entry create_one_dummy_entry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    struct log_entry dummy_entry = {timestamp, fail_message, fail_value};
+
+    return dummy_entry;
+}
+
+void add_n_entries(enum log_category log_index, uint32_t n)
+{
+    for (uint32_t i{0}; i < n; i++) {
+        add_one_entry(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
+    }
+}
+
+void overflow_log(enum log_category log_index, uint32_t overflow_entries_count)
+{
+    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
+    uint32_t log_capacity{target_cb->log_capacity};
+    uint32_t new_entries_count = log_capacity + overflow_entries_count;
+    
+    add_n_entries(log_index, new_entries_count);
+}
+
+void overflow_log_and_create_expected(enum log_category log_index, struct log_entry *expected, 
+    uint32_t overflow_entries_count)
+{
+    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
+    uint32_t log_capacity{target_cb->log_capacity};
+    uint32_t new_entries_count = log_capacity + overflow_entries_count;
+    
+    uint32_t start_recording_index{new_entries_count - log_capacity};
+    struct log_entry new_entry{0};
+    for (uint32_t i{0}; i < new_entries_count; i++) {
+        new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: some msg", i + 1);
+        add_one_entry(log_index, new_entry);
+        if (i >= start_recording_index) {
+            expected[i - start_recording_index] = new_entry;
+        }
+    }
+}
+
+void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
+{
+    CHECK_EQUAL(expected.timestamp, actual.timestamp);
+    STRCMP_EQUAL(expected.fail_message, actual.fail_message);
+    CHECK_EQUAL(expected.fail_value, actual.fail_value);
+}
+
+void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expected)
+{
+    add_one_entry(log_index, expected);
+    
+    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1);
+    CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
+}
+
+void ADD_N_ENTRIES_AND_CHECK(enum log_category log_index, uint32_t n)
+{
+    for (uint32_t i{0}; i < n; i++) {
+        ADD_ONE_ENTRY_AND_CHECK(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
+    }
+}
+
+void COMPARE_LOG_AND_EXPECTED(enum log_category log_index, struct log_entry *expected)
+{
+    for (uint32_t i{0}; i < circular_buffer_array[log_index]->log_capacity; i++) {
+        struct log_entry actual_entry = get_entry_at_index(log_index, i);
+        CHECK_LOG_ENTRY_EQUAL(expected[i], actual_entry);
     }
 }
 
@@ -226,19 +239,6 @@ void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_category log_index)
     CHECK(!is_file_empty(file));
 
     COMPARE_LOG_AND_FILE(file, log_index);
-}
-
-void CHECK_ALL_FLAGS(void)
-{
-    CHECK(runtime_error_asserted == false);
-    CHECK(user_error_handler_set == false);
-}
-
-void CHECK_FOR_ZERO_CAPACITY_LOGS(void)
-{
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
-        CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
-    }
 }
 
 void CHECK_RUNTIME_ERROR_FLAG_ASSERTED(void)
