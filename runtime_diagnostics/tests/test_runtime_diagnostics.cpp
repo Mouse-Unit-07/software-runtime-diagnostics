@@ -91,6 +91,15 @@ void overflow_log_and_create_expected(enum log_category log_index, struct log_en
     }
 }
 
+void overflow_log(enum log_category log_index, uint32_t overflow_entries_count)
+{
+    struct circular_buffer *target_cb{circular_buffer_array[log_index]};
+    uint32_t log_capacity{target_cb->log_capacity};
+    uint32_t new_entries_count = log_capacity + overflow_entries_count;
+    
+    add_n_entries(log_index, new_entries_count);
+}
+
 void CHECK_LOG_ENTRY_EQUAL(struct log_entry expected, struct log_entry actual)
 {
     CHECK_EQUAL(expected.timestamp, actual.timestamp);
@@ -409,8 +418,7 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 {
     struct log_entry expected = create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2);
     add_one_entry(ERROR_LOG_INDEX, expected);
-    add_one_entry(ERROR_LOG_INDEX,
-        create_one_dummy_entry(3, "test_runtime_diagnostics.cpp: another error message", 4));
+    overflow_log(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY);
     CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
 }
 
@@ -424,6 +432,8 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
             expected = new_entry;
         }
     }
+    overflow_log(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY);
+
     CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
 }
 
