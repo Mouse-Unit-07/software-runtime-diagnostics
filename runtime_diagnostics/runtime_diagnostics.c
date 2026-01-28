@@ -80,7 +80,7 @@ static void reset_all_flags(void)
     user_error_handler_set = false;
 }
 
-static void add_entry_to_log(enum log_types_indices log_index, 
+static void add_entry_to_circular_buffer(enum log_types_indices log_index, 
     struct log_entry new_entry)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
@@ -110,19 +110,27 @@ struct log_entry get_entry_at_index(enum log_types_indices log_index,
     return target_cb->log_entries[return_entry_index];
 }
 
+static void print_log_entry(struct log_entry entry)
+{
+    printf("%" PRIu32 " %s %" PRIu32 "\r\n", 
+                entry.timestamp, entry.fail_message, entry.fail_value);
+}
+
 static void printf_log(enum log_types_indices log_index)
 {
     for (uint32_t i = 0; i < circular_buffer_array[log_index]->count; i++) {
         struct log_entry entry = get_entry_at_index(log_index, i);
-        printf("%" PRIu32 " %s %" PRIu32 "\r\n", 
-                entry.timestamp, entry.fail_message, entry.fail_value);
+        print_log_entry(entry);
     }
 }
 
-void set_error_flag_and_call_handler(void)
+void assert_runtime_error_flag(void)
 {
     runtime_error_asserted = true;
+}
 
+void call_error_handler_if_set(void)
+{
     if (user_error_handler_set) {
         user_error_handler();
     }
@@ -133,11 +141,23 @@ bool is_log_full(enum log_types_indices log_index)
     return circular_buffer_array[log_index]->size == circular_buffer_array[log_index]->count;
 }
 
-void save_first_runtime_error_cause(struct log_entry new_log)
+void save_entry_if_first_runtime_error(struct log_entry new_log)
 {
     if (!runtime_error_asserted) {
         first_runtime_error_cause = new_log;
     }
+}
+
+void assert_error_handler_set_flag(void)
+{
+    user_error_handler_set = true;
+}
+
+void runtime_error_procedure(struct log_entry new_log)
+{
+    save_entry_if_first_runtime_error(new_log);
+    assert_runtime_error_flag();
+    call_error_handler_if_set();
 }
 
 /*----------------------------------------------------------------------------*/
@@ -158,13 +178,13 @@ void deinit_runtime_diagnostics()
 void set_error_handler_function(void (*handler_function)(void))
 {
     user_error_handler = handler_function;
-    user_error_handler_set = true;
+    assert_error_handler_set_flag();
 }
 
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    add_entry_to_log(TELEMETRY_INDEX,
+    add_entry_to_circular_buffer(TELEMETRY_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
 }
 
@@ -172,11 +192,10 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
     struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_log(WARNING_INDEX, new_entry);
+    add_entry_to_circular_buffer(WARNING_INDEX, new_entry);
 
     if (is_log_full(WARNING_INDEX)) {
-        save_first_runtime_error_cause(new_entry);
-        set_error_flag_and_call_handler();
+        runtime_error_procedure(new_entry);
     }
 }
 
@@ -184,10 +203,9 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
     struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_log(ERROR_INDEX, new_entry);
+    add_entry_to_circular_buffer(ERROR_INDEX, new_entry);
 
-    save_first_runtime_error_cause(new_entry);
-    set_error_flag_and_call_handler();
+    runtime_error_procedure(new_entry);
 }
 
 void printf_telemetry_log(void)
