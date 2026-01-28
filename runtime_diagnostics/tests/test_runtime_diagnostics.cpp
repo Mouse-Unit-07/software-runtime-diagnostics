@@ -210,6 +210,13 @@ void CHECK_ALL_FLAGS(void)
     CHECK(user_error_handler_set == false);
 }
 
+void CHECK_FOR_ZERO_CAPACITY_LOGS(void)
+{
+    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
+        CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
+    }
+}
+
 }
 
 /*============================================================================*/
@@ -290,13 +297,18 @@ TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnDeinit)
     CHECK_ALL_FLAGS();
 }
 
-TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroSizeOnInit)
+TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroCapacityOnInit)
 {
     init_runtime_diagnostics();
 
-    for (uint32_t i{0}; i < LOG_CATEGORIES_COUNT; i++) {
-        CHECK(circular_buffer_array[log_category_array[i]]->log_capacity != 0);
-    }
+    CHECK_FOR_ZERO_CAPACITY_LOGS();
+}
+
+TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroCapacityOnDeinit)
+{
+    deinit_runtime_diagnostics();
+    
+    CHECK_FOR_ZERO_CAPACITY_LOGS();
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
