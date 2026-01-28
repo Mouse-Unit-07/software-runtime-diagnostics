@@ -66,6 +66,13 @@ void add_one_entry(enum log_category log_index, struct log_entry expected)
     runtime_functions[log_index](expected.timestamp, expected.fail_message, expected.fail_value);
 }
 
+void add_n_entries(enum log_category log_index, uint32_t n)
+{
+    for (uint32_t i{0}; i < n; i++) {
+        add_one_entry(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
+    }
+}
+
 void overflow_log_and_update_expected(enum log_category log_index, struct log_entry *expected, 
     uint32_t new_entries_count)
 {
@@ -104,6 +111,13 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expec
     
     log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1);
     CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
+}
+
+void ADD_N_ENTRIES_AND_CHECK(enum log_category log_index, uint32_t n)
+{
+    for (uint32_t i{0}; i < n; i++) {
+        ADD_ONE_ENTRY_AND_CHECK(log_index, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: msg", i + 1));
+    }
 }
 
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
@@ -337,16 +351,12 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0}; i < (TELEMETRY_LOG_CAPACITY - 1); i++) {
-        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
-    }
+    ADD_N_ENTRIES_AND_CHECK(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY - 1);
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0}; i < TELEMETRY_LOG_CAPACITY; i++) {
-        ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
-    }
+    ADD_N_ENTRIES_AND_CHECK(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY);
 }
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
