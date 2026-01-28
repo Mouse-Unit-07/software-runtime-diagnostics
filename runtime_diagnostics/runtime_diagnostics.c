@@ -27,8 +27,8 @@ struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_SIZE] = {{0}};
 struct log_entry error_entries[ERROR_LOG_SIZE] = {{0}};
 
-enum log_types_indices log_indices_array[LOG_TYPES_COUNT]
-        = {TELEMETRY_INDEX, WARNING_INDEX, ERROR_INDEX};
+enum log_category log_category_array[LOG_CATEGORIES_COUNT]
+        = {TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX};
 
 struct circular_buffer telemetry_cb \
         = {telemetry_entries, TELEMETRY_LOG_SIZE, 0, 0};
@@ -37,7 +37,7 @@ struct circular_buffer warning_cb \
 struct circular_buffer error_cb \
         = {error_entries, ERROR_LOG_SIZE, 0, 0};
 
-struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT] \
+struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] \
         = { &telemetry_cb, &warning_cb, &error_cb };
 
 volatile bool runtime_error_asserted = false;
@@ -58,7 +58,7 @@ static void reset_log_entries(struct log_entry *entries, uint32_t entries_count)
     memset(entries, 0, sizeof(struct log_entry) * entries_count);
 }
 
-static void reset_circular_buffer(enum log_types_indices log_index)
+static void reset_circular_buffer(enum log_category log_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
     reset_log_entries(target_cb->log_entries, target_cb->size);
@@ -68,9 +68,9 @@ static void reset_circular_buffer(enum log_types_indices log_index)
 
 static void reset_all_circular_buffers(void)
 {
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++)
+    for (uint32_t i = 0; i < LOG_CATEGORIES_COUNT; i++)
     {
-        reset_circular_buffer(log_indices_array[i]);
+        reset_circular_buffer(log_category_array[i]);
     }
 }
 
@@ -80,7 +80,7 @@ static void reset_all_flags(void)
     user_error_handler_set = false;
 }
 
-static void add_entry_to_circular_buffer(enum log_types_indices log_index, 
+static void add_entry_to_circular_buffer(enum log_category log_index, 
     struct log_entry new_entry)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
@@ -101,7 +101,7 @@ static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_me
 }
 
 //private helper, but removing static to allow test access
-struct log_entry get_entry_at_index(enum log_types_indices log_index, 
+struct log_entry get_entry_at_index(enum log_category log_index, 
         uint32_t entry_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
@@ -116,7 +116,7 @@ static void print_log_entry(struct log_entry entry)
                 entry.timestamp, entry.fail_message, entry.fail_value);
 }
 
-static void printf_log(enum log_types_indices log_index)
+static void printf_log(enum log_category log_index)
 {
     for (uint32_t i = 0; i < circular_buffer_array[log_index]->count; i++) {
         struct log_entry entry = get_entry_at_index(log_index, i);
@@ -136,7 +136,7 @@ void call_error_handler_if_set(void)
     }
 }
 
-bool is_log_full(enum log_types_indices log_index)
+bool is_log_full(enum log_category log_index)
 {
     return circular_buffer_array[log_index]->size == circular_buffer_array[log_index]->count;
 }
@@ -184,7 +184,7 @@ void set_error_handler_function(void (*handler_function)(void))
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    add_entry_to_circular_buffer(TELEMETRY_INDEX,
+    add_entry_to_circular_buffer(TELEMETRY_LOG_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
 }
 
@@ -192,9 +192,9 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
     struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_circular_buffer(WARNING_INDEX, new_entry);
+    add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
 
-    if (is_log_full(WARNING_INDEX)) {
+    if (is_log_full(WARNING_LOG_INDEX)) {
         runtime_error_procedure(new_entry);
     }
 }
@@ -203,24 +203,24 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
     struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_circular_buffer(ERROR_INDEX, new_entry);
+    add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
 
     runtime_error_procedure(new_entry);
 }
 
 void printf_telemetry_log(void)
 {
-    printf_log(TELEMETRY_INDEX);
+    printf_log(TELEMETRY_LOG_INDEX);
 }
 
 void printf_warning_log(void)
 {
-    printf_log(WARNING_INDEX);
+    printf_log(WARNING_LOG_INDEX);
 }
 
 void printf_error_log(void)
 {
-    printf_log(ERROR_INDEX);
+    printf_log(ERROR_LOG_INDEX);
 }
 
 /*----------------------------------------------------------------------------*/

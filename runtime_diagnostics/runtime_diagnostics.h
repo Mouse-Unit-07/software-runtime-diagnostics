@@ -23,12 +23,12 @@ struct circular_buffer {
     uint32_t count;
 };
 
-enum log_types_indices
+enum log_category
 {
-    TELEMETRY_INDEX = 0,
-    WARNING_INDEX,
-    ERROR_INDEX,
-    LOG_TYPES_COUNT
+    TELEMETRY_LOG_INDEX = 0,
+    WARNING_LOG_INDEX,
+    ERROR_LOG_INDEX,
+    LOG_CATEGORIES_COUNT
 };
 
 enum
@@ -57,7 +57,7 @@ void printf_warning_log(void);
 void printf_error_log(void);
 
 //private helper for test
-struct log_entry get_entry_at_index(enum log_types_indices log_index, 
+struct log_entry get_entry_at_index(enum log_category log_index, 
         uint32_t entry_index);
 
 #endif /* RUNTIME_DIAGNOSTICS_H_ */
