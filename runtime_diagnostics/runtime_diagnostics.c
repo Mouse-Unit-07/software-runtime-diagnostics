@@ -223,6 +223,11 @@ void printf_error_log(void)
     printf_log(ERROR_LOG_INDEX);
 }
 
+void printf_first_runtime_error_entry(void)
+{
+    print_log_entry(first_runtime_error_cause);
+}
+
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */
 /*----------------------------------------------------------------------------*/

@@ -54,6 +54,7 @@ void set_error_handler_function(void (*handler_function)(void));
 void printf_telemetry_log(void);
 void printf_warning_log(void);
 void printf_error_log(void);
+void printf_first_runtime_error_entry(void);
 
 //private helper for test
 struct log_entry get_entry_at_index(enum log_category log_index, 

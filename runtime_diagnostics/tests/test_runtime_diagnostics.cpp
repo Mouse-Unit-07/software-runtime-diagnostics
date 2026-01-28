@@ -44,8 +44,6 @@ static FILE *saved_output{nullptr};
 void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value){RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
-void (*print_log_functions[LOG_CATEGORIES_COUNT])(void){printf_telemetry_log, printf_warning_log, printf_error_log};
-
 /*============================================================================*/
 /*                             Private Definitions                            */
 /*============================================================================*/
@@ -227,11 +225,11 @@ void COMPARE_LOG_AND_FILE(FILE *file, enum log_category log_index)
     }
 }
 
-void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_category log_index)
+void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_category log_index, void (*print_function)(void))
 {
     const char *TEST_FILENAME{"test_output.txt"};
     redirect_stdout(TEST_FILENAME);
-    print_log_functions[log_index]();
+    print_function();
     restore_stdout();
     FILE *file{fopen(TEST_FILENAME, "r")};
     CHECK(file != nullptr);
@@ -439,35 +437,42 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 {
     add_n_entries(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY - 1);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX, printf_telemetry_log);
 }
 
 TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 {
     add_n_entries(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY - 1);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX, printf_warning_log);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
 {
     add_n_entries(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY - 1);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX, printf_error_log);
 }
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedOnOverflow)
 {
     overflow_log(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX, printf_telemetry_log);
 }
 
-TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenOnOverflow)
+TEST(RuntimeDiagnosticsTest, WarningLogPrintedOnOverflow)
 {
     overflow_log(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX, printf_warning_log);
 }
 
-TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenOnOverflow)
+TEST(RuntimeDiagnosticsTest, ErrorLogPrintedOnOverflow)
 {
     overflow_log(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY);
-    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX, printf_error_log);
+}
+
+TEST(RuntimeDiagnosticsTest, FirstRuntTimeErrorPrinted)
+{
+    struct log_entry expected = create_one_dummy_entry(1, "some_file.c: error message", 2);
+    add_one_entry(ERROR_LOG_INDEX, expected);
+    PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX, printf_first_runtime_error_entry);
 }
