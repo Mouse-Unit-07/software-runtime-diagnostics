@@ -63,7 +63,7 @@ static void reset_circular_buffer(enum log_category log_index)
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
     reset_log_entries(target_cb->log_entries, target_cb->log_capacity);
     target_cb->head = 0;
-    target_cb->count = 0;
+    target_cb->current_size = 0;
 }
 
 static void reset_all_circular_buffers(void)
@@ -88,8 +88,8 @@ static void add_entry_to_circular_buffer(enum log_category log_index,
     memcpy(target_entry, &new_entry, sizeof(new_entry));
 
     target_cb->head = (target_cb->head + 1) % target_cb->log_capacity;
-    if (target_cb->count != target_cb->log_capacity) {
-        target_cb->count++;
+    if (target_cb->current_size != target_cb->log_capacity) {
+        target_cb->current_size++;
     }
 }
 
@@ -105,7 +105,7 @@ struct log_entry get_entry_at_index(enum log_category log_index,
         uint32_t entry_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
-    uint32_t oldest_entry_index = (target_cb->head + target_cb->log_capacity - target_cb->count) % target_cb->log_capacity;
+    uint32_t oldest_entry_index = (target_cb->head + target_cb->log_capacity - target_cb->current_size) % target_cb->log_capacity;
     uint32_t return_entry_index = (oldest_entry_index + entry_index) % target_cb->log_capacity;
     return target_cb->log_entries[return_entry_index];
 }
@@ -118,7 +118,7 @@ static void print_log_entry(struct log_entry entry)
 
 static void printf_log(enum log_category log_index)
 {
-    for (uint32_t i = 0; i < circular_buffer_array[log_index]->count; i++) {
+    for (uint32_t i = 0; i < circular_buffer_array[log_index]->current_size; i++) {
         struct log_entry entry = get_entry_at_index(log_index, i);
         print_log_entry(entry);
     }
@@ -138,7 +138,7 @@ void call_error_handler_if_set(void)
 
 bool is_log_full(enum log_category log_index)
 {
-    return circular_buffer_array[log_index]->log_capacity == circular_buffer_array[log_index]->count;
+    return circular_buffer_array[log_index]->log_capacity == circular_buffer_array[log_index]->current_size;
 }
 
 void save_entry_if_first_runtime_error(struct log_entry new_log)

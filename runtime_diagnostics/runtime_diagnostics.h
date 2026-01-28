@@ -20,7 +20,7 @@ struct circular_buffer {
     struct log_entry *log_entries;
     uint32_t log_capacity;
     uint32_t head;
-    uint32_t count;
+    uint32_t current_size;
 };
 
 enum log_category

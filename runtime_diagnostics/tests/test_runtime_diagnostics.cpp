@@ -102,7 +102,7 @@ void ADD_ONE_ENTRY_AND_CHECK(enum log_category log_index, struct log_entry expec
 {
     add_one_entry(log_index, expected);
     
-    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->count - 1);
+    log_entry new_entry = get_entry_at_index(log_index, circular_buffer_array[log_index]->current_size - 1);
     CHECK_LOG_ENTRY_EQUAL(expected, new_entry);
 }
 
