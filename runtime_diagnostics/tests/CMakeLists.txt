@@ -16,6 +16,10 @@ add_executable(test_runtime_diagnostics
     ${CMAKE_SOURCE_DIR}/tests/test_main.cpp
 )
 
+target_include_directories(test_runtime_diagnostics PUBLIC
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
 target_link_libraries(test_runtime_diagnostics PRIVATE
     runtime_diagnostics_lib
     CppUTest::CppUTest
