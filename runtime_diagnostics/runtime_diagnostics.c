@@ -53,22 +53,31 @@ void (*user_error_handler)(void) = NULL;
 /*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
-static void reset_circular_buffer(struct circular_buffer *cb)
+static void reset_log_entries(struct log_entry *entries, uint32_t entries_count)
 {
-    cb->head = 0;
-    cb->count = 0;
+    memset(entries, 0, sizeof(struct log_entry) * entries_count);
 }
 
-static void reset_all_logs(void)
+static void reset_circular_buffer(enum log_types_indices log_index)
+{
+    struct circular_buffer *target_cb = circular_buffer_array[log_index];
+    reset_log_entries(target_cb->log_entries, target_cb->size);
+    target_cb->head = 0;
+    target_cb->count = 0;
+}
+
+static void reset_all_circular_buffers(void)
+{
+    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++)
+    {
+        reset_circular_buffer(log_indices_array[i]);
+    }
+}
+
+static void reset_all_flags(void)
 {
     runtime_error_asserted = false;
     user_error_handler_set = false;
-    
-    for (uint32_t i = 0; i < LOG_TYPES_COUNT; i++)
-    {
-        memset(circular_buffer_array[i]->log_entries, 0, sizeof(struct log_entry) * circular_buffer_array[i]->size);
-        reset_circular_buffer(circular_buffer_array[i]);
-    }
 }
 
 static void add_entry_to_log(enum log_types_indices log_index, 
@@ -136,12 +145,14 @@ void save_first_runtime_error_cause(struct log_entry new_log)
 /*----------------------------------------------------------------------------*/
 void init_runtime_diagnostics()
 {
-    reset_all_logs();
+    reset_all_flags();
+    reset_all_circular_buffers();
 }
 
 void deinit_runtime_diagnostics()
 {
-    reset_all_logs();
+    reset_all_flags();
+    reset_all_circular_buffers();
 }
 
 void set_error_handler_function(void (*handler_function)(void))

@@ -5,7 +5,8 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- does the log entry that asserted an error get saved?
+- can the log saved from the first runtime error be printed?
+- are all globals cleared on init/deinit? 
 */
 
 /*============================================================================*/
@@ -34,6 +35,8 @@ extern struct circular_buffer error_cb;
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 extern volatile bool runtime_error_asserted;
 extern struct log_entry first_runtime_error_cause;
+extern bool user_error_handler_set;
+extern void (*user_error_handler)(void);
 
 volatile bool dummy_error_callback_called{false};
 
@@ -201,6 +204,12 @@ void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_types_indices log_index)
     COMPARE_LOG_AND_FILE(file, log_index);
 }
 
+void CHECK_ALL_FLAGS(void)
+{
+    CHECK(runtime_error_asserted == false);
+    CHECK(user_error_handler_set == false);
+}
+
 }
 
 /*============================================================================*/
@@ -265,6 +274,20 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
     deinit_runtime_diagnostics();
     
     CHECK_ALL_LOGS_ARE_CLEAR();
+}
+
+TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnInit)
+{
+    init_runtime_diagnostics();
+    
+    CHECK_ALL_FLAGS();
+}
+
+TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnDeinit)
+{
+    deinit_runtime_diagnostics();
+    
+    CHECK_ALL_FLAGS();
 }
 
 TEST(RuntimeDiagnosticsTest, CheckThatNoBuffersHaveZeroSize)
