@@ -232,6 +232,16 @@ void CHECK_FOR_ZERO_CAPACITY_LOGS(void)
     }
 }
 
+void CHECK_RUNTIME_ERROR_FLAG_ASSERTED(void)
+{
+    CHECK(runtime_error_asserted == true);
+}
+
+void CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED(void)
+{
+    CHECK(dummy_error_callback_called == true);
+}
+
 }
 
 /*============================================================================*/
@@ -374,7 +384,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
 {
     add_one_entry(ERROR_LOG_INDEX,
         create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
-    CHECK(runtime_error_asserted == true);
+    CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
@@ -382,7 +392,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
     set_error_handler_function(dummy_callback_function);
     add_one_entry(ERROR_LOG_INDEX,
         create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2));
-    CHECK(dummy_error_callback_called == true);
+    CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED();
 }
 
 TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
@@ -391,8 +401,8 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
     for (uint32_t i{0}; i < WARNING_LOG_CAPACITY; i++) {
         add_one_entry(WARNING_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
     }
-    CHECK(runtime_error_asserted == true);
-    CHECK(dummy_error_callback_called == true);
+    CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
+    CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED();
 }
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
