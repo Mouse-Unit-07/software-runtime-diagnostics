@@ -41,6 +41,7 @@ struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT] \
         = { &telemetry_cb, &warning_cb, &error_cb };
 
 volatile bool runtime_error_asserted = false;
+struct log_entry first_runtime_error_cause = {0};
 bool user_error_handler_set = false;
 void (*user_error_handler)(void) = NULL;
 
@@ -123,6 +124,13 @@ bool is_log_full(enum log_types_indices log_index)
     return circular_buffer_array[log_index]->size == circular_buffer_array[log_index]->count;
 }
 
+void save_first_runtime_error_cause(struct log_entry new_log)
+{
+    if (!runtime_error_asserted) {
+        first_runtime_error_cause = new_log;
+    }
+}
+
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
@@ -152,10 +160,11 @@ void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
 void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    add_entry_to_log(WARNING_INDEX,
-        create_log_entry(timestamp, fail_message, fail_value));
+    struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
+    add_entry_to_log(WARNING_INDEX, new_entry);
 
     if (is_log_full(WARNING_INDEX)) {
+        save_first_runtime_error_cause(new_entry);
         set_error_flag_and_call_handler();
     }
 }
@@ -163,9 +172,10 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
 void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
-    add_entry_to_log(ERROR_INDEX,
-        create_log_entry(timestamp, fail_message, fail_value));
+    struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
+    add_entry_to_log(ERROR_INDEX, new_entry);
 
+    save_first_runtime_error_cause(new_entry);
     set_error_flag_and_call_handler();
 }
 

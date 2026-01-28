@@ -5,12 +5,7 @@
 /*                                                                            */
 /*============================================================================*/
 /* scratch notes- a list of tests:
-- is the right behavior observed in response to reaching capacity for:
-    - warning- assert the error flag and call the error callback
-- does pushing past the buffer capacity exhibit the right behavior?:
-    - telemetry- overwrite from the oldest element
-    - warning- overwrite from the oldest element, and assert the error flag and call the error callback
-    - error- overwrite from the newest element
+- does the log entry that asserted an error get saved?
 */
 
 /*============================================================================*/
@@ -38,6 +33,7 @@ extern struct circular_buffer warning_cb;
 extern struct circular_buffer error_cb;
 extern struct circular_buffer *circular_buffer_array[LOG_TYPES_COUNT];
 extern volatile bool runtime_error_asserted;
+extern struct log_entry first_runtime_error_cause;
 
 volatile bool dummy_error_callback_called{false};
 
@@ -349,6 +345,28 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
     }
     CHECK(runtime_error_asserted == true);
     CHECK(dummy_error_callback_called == true);
+}
+
+TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
+{
+    struct log_entry expected = create_one_dummy_entry(1, "test_runtime_diagnostics.cpp: error message", 2);
+    add_one_entry(ERROR_INDEX, expected);
+    add_one_entry(ERROR_INDEX,
+        create_one_dummy_entry(3, "test_runtime_diagnostics.cpp: another error message", 4));
+    CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
+}
+
+TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
+{
+    struct log_entry expected{0};
+    for (uint32_t i{0}; i < WARNING_LOG_SIZE; i++) {
+        struct log_entry new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1);
+        add_one_entry(WARNING_INDEX, new_entry);
+        if (i == (WARNING_LOG_SIZE - 1)) {
+            expected = new_entry;
+        }
+    }
+    CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
 }
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
