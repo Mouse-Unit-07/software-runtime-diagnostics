@@ -53,6 +53,63 @@ void (*user_error_handler)(void) = NULL;
 /*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
+static void reset_all_flags(void)
+{
+    runtime_error_asserted = false;
+    user_error_handler_set = false;
+}
+
+static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
+        uint32_t fail_value)
+{
+    struct log_entry new_entry = {timestamp, fail_message, fail_value};
+    return new_entry;
+}
+
+static void add_entry_to_circular_buffer(enum log_category log_index, 
+    struct log_entry new_entry)
+{
+    struct circular_buffer *target_cb = circular_buffer_array[log_index];
+    struct log_entry *target_entry = &(target_cb->log_entries[target_cb->head]);
+    memcpy(target_entry, &new_entry, sizeof(new_entry));
+
+    target_cb->head = (target_cb->head + 1) % target_cb->log_capacity;
+    if (target_cb->current_size != target_cb->log_capacity) {
+        target_cb->current_size++;
+    }
+}
+
+bool is_log_full(enum log_category log_index)
+{
+    return circular_buffer_array[log_index]->log_capacity == circular_buffer_array[log_index]->current_size;
+}
+
+void save_entry_if_first_runtime_error(struct log_entry new_log)
+{
+    if (!runtime_error_asserted) {
+        first_runtime_error_cause = new_log;
+    }
+}
+
+void assert_runtime_error_flag(void)
+{
+    runtime_error_asserted = true;
+}
+
+void call_error_handler_if_set(void)
+{
+    if (user_error_handler_set) {
+        user_error_handler();
+    }
+}
+
+void runtime_error_procedure(struct log_entry new_log)
+{
+    save_entry_if_first_runtime_error(new_log);
+    assert_runtime_error_flag();
+    call_error_handler_if_set();
+}
+
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count)
 {
     memset(entries, 0, sizeof(struct log_entry) * entries_count);
@@ -74,30 +131,9 @@ static void reset_all_circular_buffers(void)
     }
 }
 
-static void reset_all_flags(void)
+void assert_error_handler_set_flag(void)
 {
-    runtime_error_asserted = false;
-    user_error_handler_set = false;
-}
-
-static void add_entry_to_circular_buffer(enum log_category log_index, 
-    struct log_entry new_entry)
-{
-    struct circular_buffer *target_cb = circular_buffer_array[log_index];
-    struct log_entry *target_entry = &(target_cb->log_entries[target_cb->head]);
-    memcpy(target_entry, &new_entry, sizeof(new_entry));
-
-    target_cb->head = (target_cb->head + 1) % target_cb->log_capacity;
-    if (target_cb->current_size != target_cb->log_capacity) {
-        target_cb->current_size++;
-    }
-}
-
-static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value)
-{
-    struct log_entry new_entry = {timestamp, fail_message, fail_value};
-    return new_entry;
+    user_error_handler_set = true;
 }
 
 //private helper, but removing static to allow test access
@@ -124,63 +160,9 @@ static void printf_log(enum log_category log_index)
     }
 }
 
-void assert_runtime_error_flag(void)
-{
-    runtime_error_asserted = true;
-}
-
-void call_error_handler_if_set(void)
-{
-    if (user_error_handler_set) {
-        user_error_handler();
-    }
-}
-
-bool is_log_full(enum log_category log_index)
-{
-    return circular_buffer_array[log_index]->log_capacity == circular_buffer_array[log_index]->current_size;
-}
-
-void save_entry_if_first_runtime_error(struct log_entry new_log)
-{
-    if (!runtime_error_asserted) {
-        first_runtime_error_cause = new_log;
-    }
-}
-
-void assert_error_handler_set_flag(void)
-{
-    user_error_handler_set = true;
-}
-
-void runtime_error_procedure(struct log_entry new_log)
-{
-    save_entry_if_first_runtime_error(new_log);
-    assert_runtime_error_flag();
-    call_error_handler_if_set();
-}
-
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
-void init_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
-void deinit_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
-void set_error_handler_function(void (*handler_function)(void))
-{
-    user_error_handler = handler_function;
-    assert_error_handler_set_flag();
-}
-
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
         uint32_t fail_value)
 {
@@ -206,6 +188,24 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
     add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
 
     runtime_error_procedure(new_entry);
+}
+
+void init_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
+}
+
+void deinit_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
+}
+
+void set_error_handler_function(void (*handler_function)(void))
+{
+    user_error_handler = handler_function;
+    assert_error_handler_set_flag();
 }
 
 void printf_telemetry_log(void)
