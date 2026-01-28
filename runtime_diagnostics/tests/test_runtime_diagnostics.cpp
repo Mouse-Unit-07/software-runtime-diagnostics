@@ -73,11 +73,12 @@ void add_n_entries(enum log_category log_index, uint32_t n)
     }
 }
 
-void overflow_log_and_update_expected(enum log_category log_index, struct log_entry *expected, 
-    uint32_t new_entries_count)
+void overflow_log_and_create_expected(enum log_category log_index, struct log_entry *expected, 
+    uint32_t overflow_entries_count)
 {
     struct circular_buffer *target_cb{circular_buffer_array[log_index]};
     uint32_t log_capacity{target_cb->log_capacity};
+    uint32_t new_entries_count = log_capacity + overflow_entries_count;
     
     uint32_t start_recording_index{new_entries_count - log_capacity};
     struct log_entry new_entry{0};
@@ -362,9 +363,9 @@ TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
     struct log_entry expected[TELEMETRY_LOG_CAPACITY] = {{0}};
-    uint32_t total_new_entries_count = TELEMETRY_LOG_CAPACITY + 17; // arbitrary [prime number] overflow entries
+    uint32_t overflow_entries_count = 17; // arbitrary [prime number] overflow entries
     
-    overflow_log_and_update_expected(TELEMETRY_LOG_INDEX, expected, total_new_entries_count);
+    overflow_log_and_create_expected(TELEMETRY_LOG_INDEX, expected, overflow_entries_count);
 
     COMPARE_LOG_AND_EXPECTED(TELEMETRY_LOG_INDEX, expected);
 }
