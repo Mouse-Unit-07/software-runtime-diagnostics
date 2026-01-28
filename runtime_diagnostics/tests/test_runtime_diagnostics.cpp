@@ -6,7 +6,6 @@
 /*============================================================================*/
 /* scratch notes- a list of tests:
 - can the log saved from the first runtime error be printed?
-- are all globals cleared on init/deinit? 
 */
 
 /*============================================================================*/
@@ -439,24 +438,18 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i{0}; i < 3; i++) {
-        add_one_entry(TELEMETRY_LOG_INDEX, create_one_dummy_entry(i, "some_file.c: telemetry message", i + 1));
-    }
+    add_n_entries(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY - 1);
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(TELEMETRY_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, WarningLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i{0}; i < 3; i++) {
-        add_one_entry(WARNING_LOG_INDEX, create_one_dummy_entry(i, "some_file.c: warning message", i + 1));
-    }
+    add_n_entries(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY - 1);
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(WARNING_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorLogPrintedWhenPartiallyFilled)
 {
-    for (uint32_t i{0}; i < 3; i++) {
-        add_one_entry(ERROR_LOG_INDEX, create_one_dummy_entry(i, "some_file.c: error message", i + 1));
-    }
+    add_n_entries(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY - 1);
     PRINT_LOG_TO_FILE_AND_CHECK_FILE(ERROR_LOG_INDEX);
 }
