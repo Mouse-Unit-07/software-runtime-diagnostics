@@ -33,9 +33,9 @@ enum log_category
 
 enum
 {
-    TELEMETRY_LOG_SIZE = 20,
-    WARNING_LOG_SIZE = 10,
-    ERROR_LOG_SIZE = 10
+    TELEMETRY_LOG_CAPACITY = 20,
+    WARNING_LOG_CAPACITY = 10,
+    ERROR_LOG_CAPACITY = 10
 };
 
 /*----------------------------------------------------------------------------*/

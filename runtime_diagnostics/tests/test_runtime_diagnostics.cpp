@@ -25,9 +25,9 @@ extern "C" {
 /*============================================================================*/
 /*                                   Globals                                  */
 /*============================================================================*/
-extern struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE];
-extern struct log_entry warning_entries[WARNING_LOG_SIZE];
-extern struct log_entry error_entries[ERROR_LOG_SIZE];
+extern struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY];
+extern struct log_entry warning_entries[WARNING_LOG_CAPACITY];
+extern struct log_entry error_entries[ERROR_LOG_CAPACITY];
 extern enum log_category log_category_array[LOG_CATEGORIES_COUNT];
 extern struct circular_buffer telemetry_cb;
 extern struct circular_buffer warning_cb;
@@ -323,22 +323,22 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0}; i < (TELEMETRY_LOG_SIZE - 1); i++) {
+    for (uint32_t i{0}; i < (TELEMETRY_LOG_CAPACITY - 1); i++) {
         ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0}; i < TELEMETRY_LOG_SIZE; i++) {
+    for (uint32_t i{0}; i < TELEMETRY_LOG_CAPACITY; i++) {
         ADD_ONE_ENTRY_AND_CHECK(TELEMETRY_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: telemetry msg", i + 1));
     }
 }
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
-    struct log_entry expected[TELEMETRY_LOG_SIZE] = {{0}};
-    uint32_t total_new_entries_count = TELEMETRY_LOG_SIZE + 17; // arbitrary [prime number] overflow entries
+    struct log_entry expected[TELEMETRY_LOG_CAPACITY] = {{0}};
+    uint32_t total_new_entries_count = TELEMETRY_LOG_CAPACITY + 17; // arbitrary [prime number] overflow entries
     
     overflow_log_and_update_expected(TELEMETRY_LOG_INDEX, expected, total_new_entries_count);
 
@@ -363,7 +363,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
 {
     set_error_handler_function(dummy_callback_function);
-    for (uint32_t i{0}; i < WARNING_LOG_SIZE; i++) {
+    for (uint32_t i{0}; i < WARNING_LOG_CAPACITY; i++) {
         add_one_entry(WARNING_LOG_INDEX, create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1));
     }
     CHECK(runtime_error_asserted == true);
@@ -382,10 +382,10 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
 {
     struct log_entry expected{0};
-    for (uint32_t i{0}; i < WARNING_LOG_SIZE; i++) {
+    for (uint32_t i{0}; i < WARNING_LOG_CAPACITY; i++) {
         struct log_entry new_entry = create_one_dummy_entry(i, "test_runtime_diagnostics.cpp: warning msg", i + 1);
         add_one_entry(WARNING_LOG_INDEX, new_entry);
-        if (i == (WARNING_LOG_SIZE - 1)) {
+        if (i == (WARNING_LOG_CAPACITY - 1)) {
             expected = new_entry;
         }
     }

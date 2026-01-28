@@ -23,19 +23,19 @@
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
 /*----------------------------------------------------------------------------*/
-struct log_entry telemetry_entries[TELEMETRY_LOG_SIZE] = {{0}};
-struct log_entry warning_entries[WARNING_LOG_SIZE] = {{0}};
-struct log_entry error_entries[ERROR_LOG_SIZE] = {{0}};
+struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY] = {{0}};
+struct log_entry warning_entries[WARNING_LOG_CAPACITY] = {{0}};
+struct log_entry error_entries[ERROR_LOG_CAPACITY] = {{0}};
 
 enum log_category log_category_array[LOG_CATEGORIES_COUNT]
         = {TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX};
 
 struct circular_buffer telemetry_cb \
-        = {telemetry_entries, TELEMETRY_LOG_SIZE, 0, 0};
+        = {telemetry_entries, TELEMETRY_LOG_CAPACITY, 0, 0};
 struct circular_buffer warning_cb \
-        = {warning_entries, WARNING_LOG_SIZE, 0, 0};
+        = {warning_entries, WARNING_LOG_CAPACITY, 0, 0};
 struct circular_buffer error_cb \
-        = {error_entries, ERROR_LOG_SIZE, 0, 0};
+        = {error_entries, ERROR_LOG_CAPACITY, 0, 0};
 
 struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] \
         = { &telemetry_cb, &warning_cb, &error_cb };
