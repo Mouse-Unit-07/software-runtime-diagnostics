@@ -8,12 +8,13 @@ set(ALL_TEST_SOURCES
     ${ALL_TEST_SOURCES}
     ${CMAKE_CURRENT_SOURCE_DIR}/test_runtime_diagnostics.cpp
     ${CMAKE_SOURCE_DIR}/src/runtime_diagnostics/runtime_diagnostics.c
+    ${CMAKE_SOURCE_DIR}/src/runtime_diagnostics/runtime_diagnostics.h
     PARENT_SCOPE
 )
 
 add_executable(test_runtime_diagnostics
     ${CMAKE_CURRENT_SOURCE_DIR}/test_runtime_diagnostics.cpp
-    ${CMAKE_SOURCE_DIR}/tests/test_main.cpp
+    ${CMAKE_SOURCE_DIR}/cmake/tests/test_main.cpp
 )
 
 target_include_directories(test_runtime_diagnostics PUBLIC
