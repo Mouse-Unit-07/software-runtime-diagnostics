@@ -46,6 +46,10 @@ void (*print_functions[])(void){
     printf_telemetry_log, printf_warning_log, printf_error_log
 };
 
+uint32_t log_capacities_array[] = {
+    TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY, ERROR_LOG_CAPACITY
+};
+
 void redirect_stdout_to_file(void)
 {
     standard_output = stdout;
@@ -206,6 +210,13 @@ void print_log(enum log_category index)
     fflush(stdout);
 }
 
+void add_n_entries_to_log_and_check(uint32_t n, enum log_category index)
+{
+    add_n_entries_to_log_and_expectations(n, index);
+    print_log(index);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
 /*============================================================================*/
 /*                                 Test Group                                 */
 /*============================================================================*/
@@ -245,9 +256,7 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
-    add_n_entries_to_log_and_expectations(1, TELEMETRY_LOG_INDEX);
-    print_log(TELEMETRY_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(1, TELEMETRY_LOG_INDEX);
     clear_all_test_files();
     print_all_logs();
     CHECK(test_output_and_expectation_are_identical());
@@ -255,9 +264,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
-    add_n_entries_to_log_and_expectations(1, WARNING_LOG_INDEX);
-    print_log(WARNING_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(1, WARNING_LOG_INDEX);
     clear_all_test_files();
     print_all_logs();
     CHECK(test_output_and_expectation_are_identical());
@@ -265,9 +272,7 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
-    add_n_entries_to_log_and_expectations(1, ERROR_LOG_INDEX);
-    print_log(ERROR_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(1, ERROR_LOG_INDEX);
     clear_all_test_files();
     print_all_logs();
     CHECK(test_output_and_expectation_are_identical());
@@ -275,44 +280,32 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    add_n_entries_to_log_and_expectations(TELEMETRY_LOG_CAPACITY - 1, TELEMETRY_LOG_INDEX);
-    print_log(TELEMETRY_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(TELEMETRY_LOG_CAPACITY - 1, TELEMETRY_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToWarningLog)
 {
-    add_n_entries_to_log_and_expectations(WARNING_LOG_CAPACITY - 1, WARNING_LOG_INDEX);
-    print_log(WARNING_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(WARNING_LOG_CAPACITY - 1, WARNING_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToErrorLog)
 {
-    add_n_entries_to_log_and_expectations(ERROR_LOG_CAPACITY - 1, ERROR_LOG_INDEX);
-    print_log(ERROR_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(ERROR_LOG_CAPACITY - 1, ERROR_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    add_n_entries_to_log_and_expectations(TELEMETRY_LOG_CAPACITY, TELEMETRY_LOG_INDEX);
-    print_log(TELEMETRY_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(TELEMETRY_LOG_CAPACITY, TELEMETRY_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToWarningLog)
 {
-    add_n_entries_to_log_and_expectations(WARNING_LOG_CAPACITY, WARNING_LOG_INDEX);
-    print_log(WARNING_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(WARNING_LOG_CAPACITY, WARNING_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToErrorLog)
 {
-    add_n_entries_to_log_and_expectations(ERROR_LOG_CAPACITY, ERROR_LOG_INDEX);
-    print_log(ERROR_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    add_n_entries_to_log_and_check(ERROR_LOG_CAPACITY, ERROR_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
