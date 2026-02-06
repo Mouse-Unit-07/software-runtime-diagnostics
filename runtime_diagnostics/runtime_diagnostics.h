@@ -58,8 +58,4 @@ void printf_first_runtime_error_entry(void);
 void init_runtime_diagnostics();
 void deinit_runtime_diagnostics();
 
-/* private helper, but exposed for testing */
-struct log_entry get_entry_at_index(enum log_category log_index, 
-        uint32_t entry_index);
-
 #endif /* RUNTIME_DIAGNOSTICS_H_ */

@@ -33,7 +33,7 @@ static void reset_log_entries(struct log_entry *entries, uint32_t entries_count)
 static void reset_circular_buffer(enum log_category log_index);
 static void reset_all_circular_buffers(void);
 static void assert_error_handler_set_flag(void);
-struct log_entry get_entry_at_index(enum log_category log_index,
+static struct log_entry get_entry_at_index(enum log_category log_index,
                                     uint32_t entry_index);
 static void print_log_entry(struct log_entry entry);
 static void printf_log(enum log_category log_index);
@@ -221,8 +221,7 @@ static void assert_error_handler_set_flag(void)
     user_error_handler_set = true;
 }
 
-// private helper, but removing static to allow test access
-struct log_entry get_entry_at_index(enum log_category log_index,
+static struct log_entry get_entry_at_index(enum log_category log_index,
                                     uint32_t entry_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
