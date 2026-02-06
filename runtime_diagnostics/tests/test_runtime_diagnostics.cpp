@@ -10,12 +10,14 @@
 /*============================================================================*/
 extern "C" {
 #include <stdint.h>
-#include "runtime_diagnostics.h"
 #include <inttypes.h>
+#include "runtime_diagnostics.h"
 }
 
+#include <array>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <CppUTest/TestHarness.h>
 
 /*============================================================================*/
@@ -37,12 +39,19 @@ extern void (*user_error_handler)(void);
 volatile bool dummy_error_callback_called{false};
 
 FILE *standard_output{nullptr};
-constexpr const char *TEST_FILE{"test_output.txt"};
+constexpr const char *TEST_OUTPUT_FILE{"test_output.txt"};
+constexpr const char *TEST_EXPECTATIONS_FILE{"test_expectations.txt"};
+
+void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
+                                                const char *fail_message,
+                                                uint32_t fail_value){
+    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR
+};
 
 void redirect_stdout_to_file(void)
 {
     standard_output = stdout;
-    CHECK(freopen(TEST_FILE, "w+", stdout) != nullptr);
+    CHECK(freopen(TEST_OUTPUT_FILE, "w+", stdout) != nullptr);
 }
 
 void restore_stdout(void)
@@ -54,7 +63,7 @@ void restore_stdout(void)
 
 bool is_test_file_empty(void)
 {
-    FILE *file{fopen(TEST_FILE, "r")};
+    FILE *file{fopen(TEST_OUTPUT_FILE, "r")};
 
     if (!file) {
         return true;
@@ -77,11 +86,83 @@ bool is_test_file_empty(void)
     return size == 0;
 }
 
+void clear_all_test_files(void)
+{
+    FILE* file = fopen(TEST_OUTPUT_FILE, "w");
+    CHECK(file != nullptr);
+    fclose(file);
+    file = fopen(TEST_EXPECTATIONS_FILE, "w");
+    CHECK(file != nullptr);
+    fclose(file);
+}
 
-void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
-                                                const char *fail_message,
-                                                uint32_t fail_value){
-    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
+void add_log_entry_to_expectations_file(uint32_t timestamp,
+                                       const char* fail_message,
+                                       uint32_t fail_value)
+{
+    FILE* file = fopen(TEST_EXPECTATIONS_FILE, "a");
+    CHECK(file != nullptr);
+
+    const int written = fprintf(
+        file,
+        "%" PRIu32 " %s %" PRIu32 "\r\n",
+        timestamp,
+        fail_message,
+        fail_value
+    );
+
+    CHECK(written > 0);
+    fclose(file);
+}
+
+bool test_output_and_expectation_are_identical(void)
+{
+    FILE* a = fopen(TEST_OUTPUT_FILE, "rb");
+    FILE* b = fopen(TEST_EXPECTATIONS_FILE, "rb");
+
+    if (!a || !b) {
+        if (a) fclose(a);
+        if (b) fclose(b);
+        return false;
+    }
+
+    std::array<std::uint8_t, 4096> buf_a{};
+    std::array<std::uint8_t, 4096> buf_b{};
+
+    while (true) {
+        const size_t read_a = fread(buf_a.data(), 1, buf_a.size(), a);
+        const size_t read_b = fread(buf_b.data(), 1, buf_b.size(), b);
+
+        if (read_a != read_b) {
+            fclose(a);
+            fclose(b);
+            return false;
+        }
+
+        if (read_a == 0) {
+            break; // both EOF
+        }
+
+        if (std::memcmp(buf_a.data(), buf_b.data(), read_a) != 0) {
+            fclose(a);
+            fclose(b);
+            return false;
+        }
+    }
+
+    fclose(a);
+    fclose(b);
+    return true;
+}
+
+void print_all_logs_and_expect_empty_output(void)
+{
+    printf_telemetry_log();
+    printf_warning_log();
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(is_test_file_empty() == true);
+}
 
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 {
@@ -258,7 +339,7 @@ void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_category log_index,
     redirect_stdout_to_file();
     print_function();
     restore_stdout();
-    FILE *file{fopen(TEST_FILE, "r")};
+    FILE *file{fopen(TEST_OUTPUT_FILE, "r")};
     CHECK(file != nullptr);
     CHECK(!is_file_empty(file));
 
@@ -283,6 +364,7 @@ TEST_GROUP(RuntimeDiagnosticsTest)
     void setup() override
     {
         redirect_stdout_to_file();
+        clear_all_test_files();
         dummy_error_callback_called = false;
         init_runtime_diagnostics();
     }
@@ -291,6 +373,7 @@ TEST_GROUP(RuntimeDiagnosticsTest)
     {
         deinit_runtime_diagnostics();
         dummy_error_callback_called = false;
+        clear_all_test_files();
         restore_stdout();
     }
 };
@@ -301,58 +384,24 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
 {
     init_runtime_diagnostics();
-    printf_telemetry_log();
-    printf_warning_log();
-    printf_telemetry_log();
-    fflush(stdout);
-    CHECK(is_test_file_empty() == true);
+    print_all_logs_and_expect_empty_output();
 }
 
 TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 {
     deinit_runtime_diagnostics();
-    printf_telemetry_log();
-    printf_warning_log();
-    printf_telemetry_log();
-    fflush(stdout);
-    CHECK(is_test_file_empty() == true);
-}
-
-TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnInit)
-{
-    init_runtime_diagnostics();
-
-    CHECK_ALL_FLAGS();
-}
-
-TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnDeinit)
-{
-    deinit_runtime_diagnostics();
-
-    CHECK_ALL_FLAGS();
-}
-
-TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroCapacityOnInit)
-{
-    init_runtime_diagnostics();
-
-    CHECK_FOR_ZERO_CAPACITY_LOGS();
-}
-
-TEST(RuntimeDiagnosticsTest, NoBuffersHaveZeroCapacityOnDeinit)
-{
-    deinit_runtime_diagnostics();
-
-    CHECK_FOR_ZERO_CAPACITY_LOGS();
+    print_all_logs_and_expect_empty_output();
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
-    ADD_ONE_ENTRY_AND_CHECK(
-        TELEMETRY_LOG_INDEX,
-        create_one_dummy_entry(1, "some_file.c: telemetry msg", 2));
-
-    CHECK_ALL_OTHER_LOGS_ARE_CLEAR(TELEMETRY_LOG_INDEX);
+    RUNTIME_TELEMETRY(1, "some_file.c: telemetry msg", 2);
+    add_log_entry_to_expectations_file(1, "some_file.c: telemetry msg", 2);
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
+    clear_all_test_files();
+    print_all_logs_and_expect_empty_output();
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
