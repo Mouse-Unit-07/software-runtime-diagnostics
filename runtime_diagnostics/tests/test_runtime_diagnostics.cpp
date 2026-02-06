@@ -52,6 +52,32 @@ void restore_stdout(void)
     CHECK(freopen("CON", "w", standard_output) != nullptr);
 }
 
+bool is_test_file_empty(void)
+{
+    FILE *file{fopen(TEST_FILE, "r")};
+
+    if (!file) {
+        return true;
+    }
+
+    const long current = ftell(file);
+    if (current < 0) {
+        return false; // ftell failed
+    }
+
+    if (fseek(file, 0, SEEK_END) != 0) {
+        return false;
+    }
+
+    const long size = ftell(file);
+
+    // Restore position
+    fseek(file, current, SEEK_SET);
+
+    return size == 0;
+}
+
+
 void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
                                                 const char *fail_message,
                                                 uint32_t fail_value){
@@ -274,7 +300,9 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 /*============================================================================*/
 TEST(RuntimeDiagnosticsTest, TelemetryLogIsInitializedToZero)
 {
-    CHECK_LOG_IS_CLEAR(TELEMETRY_LOG_INDEX);
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(is_test_file_empty() == true);
 }
 
 TEST(RuntimeDiagnosticsTest, WarningLogIsInitializedToZero)
