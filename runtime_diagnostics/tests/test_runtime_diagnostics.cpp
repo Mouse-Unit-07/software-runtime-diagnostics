@@ -317,6 +317,18 @@ TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
     overflow_by_n_entries_and_check(107u, TELEMETRY_LOG_INDEX);
 }
 
+TEST(RuntimeDiagnosticsTest, OverflowEntriesToWarningLog)
+{
+    // overflowing by arbitrary prime number
+    overflow_by_n_entries_and_check(107u, WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, OverflowEntriesToErrorLog)
+{
+    // overflowing by arbitrary prime number
+    overflow_by_n_entries_and_check(107u, ERROR_LOG_INDEX);
+}
+
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 {
     set_error_handler_function(dummy_callback_function);
