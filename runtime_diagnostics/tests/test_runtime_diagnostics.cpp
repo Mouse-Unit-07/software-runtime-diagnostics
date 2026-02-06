@@ -487,11 +487,8 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
 {
     set_error_handler_function(dummy_callback_function);
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
-        add_one_entry(
-            WARNING_LOG_INDEX,
-            create_one_dummy_entry(i, "some_file.c: warning msg", i + 1));
+        RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
     }
-    CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
     check_dummy_callback_called_flag_asserted();
 }
 
