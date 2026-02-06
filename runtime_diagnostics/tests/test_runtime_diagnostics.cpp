@@ -462,13 +462,18 @@ TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
-    struct log_entry expected[TELEMETRY_LOG_CAPACITY]{{0}};
     uint32_t overflow_entries_count{17u}; // arbitrary prime number
-
-    overflow_log_and_create_expected(TELEMETRY_LOG_INDEX, expected,
-                                     overflow_entries_count);
-
-    COMPARE_LOG_AND_EXPECTED(TELEMETRY_LOG_INDEX, expected);
+    uint32_t total_entries{overflow_entries_count + TELEMETRY_LOG_CAPACITY};
+    uint32_t start_recording_index{overflow_entries_count};
+    for (uint32_t i{0u}; i < total_entries; i++) {
+        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
+        if (i >= start_recording_index) {
+            add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
+        }
+    }
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
