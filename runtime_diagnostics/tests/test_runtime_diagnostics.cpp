@@ -19,7 +19,7 @@ extern "C" {
 #include <CppUTest/TestHarness.h>
 
 /*============================================================================*/
-/*                                   Globals                                  */
+/*                             Public Definitions                             */
 /*============================================================================*/
 extern struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY];
 extern struct log_entry warning_entries[WARNING_LOG_CAPACITY];
@@ -42,11 +42,6 @@ void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
                                                 const char *fail_message,
                                                 uint32_t fail_value){
     RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
-
-/*============================================================================*/
-/*                             Private Definitions                            */
-/*============================================================================*/
-namespace {
 
 void CHECK_LOG_IS_CLEAR(enum log_category log_index)
 {
@@ -255,8 +250,6 @@ void CHECK_RUNTIME_ERROR_FLAG_ASSERTED(void)
 void CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED(void)
 {
     CHECK(dummy_error_callback_called == true);
-}
-
 }
 
 /*============================================================================*/
