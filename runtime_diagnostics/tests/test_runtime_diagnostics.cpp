@@ -280,10 +280,38 @@ TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
     CHECK(test_output_and_expectation_are_identical());
 }
 
+TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToWarningLog)
+{
+    add_n_entries_to_log_and_expectations(WARNING_LOG_CAPACITY - 1, WARNING_LOG_INDEX);
+    print_log(WARNING_LOG_INDEX);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
+TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToErrorLog)
+{
+    add_n_entries_to_log_and_expectations(ERROR_LOG_CAPACITY - 1, ERROR_LOG_INDEX);
+    print_log(ERROR_LOG_INDEX);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
     add_n_entries_to_log_and_expectations(TELEMETRY_LOG_CAPACITY, TELEMETRY_LOG_INDEX);
     print_log(TELEMETRY_LOG_INDEX);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
+TEST(RuntimeDiagnosticsTest, AddMaxEntriesToWarningLog)
+{
+    add_n_entries_to_log_and_expectations(WARNING_LOG_CAPACITY, WARNING_LOG_INDEX);
+    print_log(WARNING_LOG_INDEX);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
+TEST(RuntimeDiagnosticsTest, AddMaxEntriesToErrorLog)
+{
+    add_n_entries_to_log_and_expectations(ERROR_LOG_CAPACITY, ERROR_LOG_INDEX);
+    print_log(ERROR_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
 }
 
