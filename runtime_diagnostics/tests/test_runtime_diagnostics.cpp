@@ -360,7 +360,7 @@ void CHECK_RUNTIME_ERROR_FLAG_ASSERTED(void)
     CHECK(runtime_error_asserted == true);
 }
 
-void CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED(void)
+void check_dummy_callback_called_flag_asserted(void)
 {
     CHECK(dummy_error_callback_called == true);
 }
@@ -476,19 +476,11 @@ TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
     CHECK(test_output_and_expectation_are_identical());
 }
 
-TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionAssertsFlag)
-{
-    add_one_entry(ERROR_LOG_INDEX,
-                  create_one_dummy_entry(1, "some_file.c: error message", 2));
-    CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
-}
-
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
 {
     set_error_handler_function(dummy_callback_function);
-    add_one_entry(ERROR_LOG_INDEX,
-                  create_one_dummy_entry(1, "some_file.c: error message", 2));
-    CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED();
+    RUNTIME_ERROR(1, "some_file.c: error message", 2);
+    check_dummy_callback_called_flag_asserted();
 }
 
 TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
@@ -500,7 +492,7 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
             create_one_dummy_entry(i, "some_file.c: warning msg", i + 1));
     }
     CHECK_RUNTIME_ERROR_FLAG_ASSERTED();
-    CHECK_ERROR_CALLBACK_CALLED_FLAG_ASSERTED();
+    check_dummy_callback_called_flag_asserted();
 }
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
