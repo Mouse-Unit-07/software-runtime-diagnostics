@@ -83,12 +83,16 @@ bool is_test_file_empty(void)
     // Restore position
     fseek(file, current, SEEK_SET);
 
-    return size == 0;
+    bool result{size == 0};
+
+    fclose(file);
+
+    return result;
 }
 
 void clear_all_test_files(void)
 {
-    FILE* file = fopen(TEST_OUTPUT_FILE, "w");
+    FILE* file{fopen(TEST_OUTPUT_FILE, "w")};
     CHECK(file != nullptr);
     fclose(file);
     file = fopen(TEST_EXPECTATIONS_FILE, "w");
@@ -100,7 +104,7 @@ void add_log_entry_to_expectations_file(uint32_t timestamp,
                                        const char* fail_message,
                                        uint32_t fail_value)
 {
-    FILE* file = fopen(TEST_EXPECTATIONS_FILE, "a");
+    FILE* file{fopen(TEST_EXPECTATIONS_FILE, "a")};
     CHECK(file != nullptr);
 
     const int written = fprintf(
@@ -117,8 +121,8 @@ void add_log_entry_to_expectations_file(uint32_t timestamp,
 
 bool test_output_and_expectation_are_identical(void)
 {
-    FILE* a = fopen(TEST_OUTPUT_FILE, "rb");
-    FILE* b = fopen(TEST_EXPECTATIONS_FILE, "rb");
+    FILE* a{fopen(TEST_OUTPUT_FILE, "rb")};
+    FILE* b{fopen(TEST_EXPECTATIONS_FILE, "rb")};
 
     if (!a || !b) {
         if (a) fclose(a);
@@ -155,11 +159,16 @@ bool test_output_and_expectation_are_identical(void)
     return true;
 }
 
-void print_all_logs_and_expect_empty_output(void)
+void print_all_logs(void)
 {
     printf_telemetry_log();
     printf_warning_log();
     printf_telemetry_log();
+}
+
+void print_all_logs_and_expect_empty_output(void)
+{
+    print_all_logs();
     fflush(stdout);
     CHECK(is_test_file_empty() == true);
 }
@@ -401,16 +410,20 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
     fflush(stdout);
     CHECK(test_output_and_expectation_are_identical());
     clear_all_test_files();
-    print_all_logs_and_expect_empty_output();
+    print_all_logs();
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
-    ADD_ONE_ENTRY_AND_CHECK(
-        WARNING_LOG_INDEX,
-        create_one_dummy_entry(1, "some_file.c: warning message", 2));
-
-    CHECK_ALL_OTHER_LOGS_ARE_CLEAR(WARNING_LOG_INDEX);
+    RUNTIME_WARNING(1, "some_file.c: warning message", 2);
+    add_log_entry_to_expectations_file(1, "some_file.c: warning message", 2);
+    printf_warning_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
+    clear_all_test_files();
+    print_all_logs();
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
