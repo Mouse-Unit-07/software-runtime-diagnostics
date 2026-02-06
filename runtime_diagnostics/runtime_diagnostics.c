@@ -128,6 +128,10 @@ void set_warning_handler(void (*handler)(void))
 {
     user_warning_handler = handler;
     user_warning_handler_set = true;
+
+    if (is_log_full(WARNING_LOG_INDEX)) {
+        user_warning_handler();
+    }
 }
 
 void set_error_handler(void (*handler)(void))

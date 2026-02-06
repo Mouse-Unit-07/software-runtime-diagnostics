@@ -348,6 +348,17 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogCallsHandlerWhenSet)
     CHECK(dummy_error_callback_called);
 }
 
+TEST(RuntimeDiagnosticsTest, WarningHandlerCalledWhenWarningLogAlreadyFull)
+{
+    
+    for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
+        RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
+    }
+    CHECK(!dummy_error_callback_called);
+    set_warning_handler(dummy_callback_function);
+    CHECK(dummy_error_callback_called);
+}
+
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 {
     RUNTIME_ERROR(0, "some_file.c: error message", 0);
