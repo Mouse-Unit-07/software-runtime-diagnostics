@@ -68,6 +68,10 @@ enum log_category log_category_array[LOG_CATEGORIES_COUNT] = {
     TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX
 };
 
+const char *log_names_array[LOG_CATEGORIES_COUNT] = {
+    "telemetry", "warning", "error"
+};
+
 struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_CAPACITY] = {{0}};
 struct log_entry error_entries[ERROR_LOG_CAPACITY] = {{0}};
@@ -82,6 +86,8 @@ struct circular_buffer error_cb \
 struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] = {
     &telemetry_cb, &warning_cb, &error_cb
 };
+
+uint32_t call_counts_array[LOG_CATEGORIES_COUNT] = {0};
 
 volatile bool runtime_error_asserted = false;
 struct log_entry first_runtime_error_cause = {0};
@@ -164,6 +170,15 @@ void printf_first_runtime_error_entry(void)
     print_log_entry(first_runtime_error_cause);
 }
 
+void printf_call_counts(void)
+{
+    for (uint32_t i = 0u; i < LOG_CATEGORIES_COUNT; i++) {
+        printf("%s: %" PRIu32 "\r\n",
+            log_names_array[i],
+            call_counts_array[i]);
+    }
+}
+
 void init_runtime_diagnostics()
 {
     reset_all_flags();
@@ -195,10 +210,11 @@ static struct log_entry create_log_entry(uint32_t timestamp,
 static void add_entry_to_circular_buffer(enum log_category log_index,
                                          struct log_entry new_entry)
 {
+    call_counts_array[log_index]++;
+
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
     struct log_entry *target_entry = &(target_cb->log_entries[target_cb->head]);
     memcpy(target_entry, &new_entry, sizeof(new_entry));
-
     target_cb->head = (target_cb->head + 1) % target_cb->log_capacity;
     if (target_cb->current_size != target_cb->log_capacity) {
         target_cb->current_size++;

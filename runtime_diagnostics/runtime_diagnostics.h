@@ -33,6 +33,7 @@ void printf_telemetry_log(void);
 void printf_warning_log(void);
 void printf_error_log(void);
 void printf_first_runtime_error_entry(void);
+void printf_call_counts(void);
 
 /* init and deinit are for testing only */
 void init_runtime_diagnostics();

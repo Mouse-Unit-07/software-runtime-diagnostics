@@ -370,3 +370,23 @@ TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
     fflush(stdout);
     CHECK(test_output_and_expectation_are_identical());
 }
+
+TEST(RuntimeDiagnosticsTest, RuntimeFunctionCallCountsAreKept)
+{
+    RUNTIME_ERROR(0, "some_file.c: error message", 0);
+    RUNTIME_WARNING(0, "some_file.c: warning message", 0);
+    RUNTIME_WARNING(0, "some_file.c: warning message", 0);
+    RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
+    RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
+    RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
+    printf_call_counts();
+    fflush(stdout);
+    char buffer[64];
+    FILE* file{fopen(TEST_OUTPUT_FILE, "r")};
+    CHECK(fgets(buffer, sizeof(buffer), file));
+    CHECK(std::strcmp(buffer, "telemetry: 3\r\n") == 0);
+    CHECK(fgets(buffer, sizeof(buffer), file));
+    CHECK(std::strcmp(buffer, "warning: 2\r\n") == 0);
+    CHECK(fgets(buffer, sizeof(buffer), file));
+    CHECK(std::strcmp(buffer, "error: 1\r\n") == 0);
+}
