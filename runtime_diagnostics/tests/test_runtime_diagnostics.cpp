@@ -29,10 +29,21 @@ FILE *standard_output{nullptr};
 constexpr const char *TEST_OUTPUT_FILE{"test_output.txt"};
 constexpr const char *TEST_EXPECTATIONS_FILE{"test_expectations.txt"};
 
-void (*runtime_functions[])(uint32_t timestamp,
-                                                const char *fail_message,
-                                                uint32_t fail_value){
+enum log_category
+{
+    TELEMETRY_LOG_INDEX = 0,
+    WARNING_LOG_INDEX,
+    ERROR_LOG_INDEX,
+    LOG_CATEGORIES_COUNT
+};
+
+void (*runtime_functions[])(
+        uint32_t timestamp, const char *fail_message, uint32_t fail_value){
     RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR
+};
+
+void (*print_functions[])(void){
+    printf_telemetry_log, printf_warning_log, printf_error_log
 };
 
 void redirect_stdout_to_file(void)
@@ -181,6 +192,20 @@ void check_dummy_callback_called_flag_asserted(void)
     CHECK(dummy_error_callback_called == true);
 }
 
+void add_n_entries_to_log_and_expectations(uint32_t n, enum log_category index)
+{
+    for (uint32_t i{0u}; i < n; i++) {
+        runtime_functions[index](i, "some_file.c: some msg", i + 1);
+        add_log_entry_to_expectations_file(i, "some_file.c: some msg", i + 1);
+    }
+}
+
+void print_log(enum log_category index)
+{
+    print_functions[index]();
+    fflush(stdout);
+}
+
 /*============================================================================*/
 /*                                 Test Group                                 */
 /*============================================================================*/
@@ -220,10 +245,8 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
-    RUNTIME_TELEMETRY(1, "some_file.c: telemetry msg", 2);
-    add_log_entry_to_expectations_file(1, "some_file.c: telemetry msg", 2);
-    printf_telemetry_log();
-    fflush(stdout);
+    add_n_entries_to_log_and_expectations(1, TELEMETRY_LOG_INDEX);
+    print_log(TELEMETRY_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
     clear_all_test_files();
     print_all_logs();
@@ -232,10 +255,8 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
-    RUNTIME_WARNING(1, "some_file.c: warning message", 2);
-    add_log_entry_to_expectations_file(1, "some_file.c: warning message", 2);
-    printf_warning_log();
-    fflush(stdout);
+    add_n_entries_to_log_and_expectations(1, WARNING_LOG_INDEX);
+    print_log(WARNING_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
     clear_all_test_files();
     print_all_logs();
@@ -244,10 +265,8 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
-    RUNTIME_ERROR(1, "some_file.c: error message", 2);
-    add_log_entry_to_expectations_file(1, "some_file.c: error message", 2);
-    printf_error_log();
-    fflush(stdout);
+    add_n_entries_to_log_and_expectations(1, ERROR_LOG_INDEX);
+    print_log(ERROR_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
     clear_all_test_files();
     print_all_logs();
@@ -256,23 +275,15 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0u}; i < TELEMETRY_LOG_CAPACITY - 1; i++) {
-        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
-        add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
-    }
-    printf_telemetry_log();
-    fflush(stdout);
+    add_n_entries_to_log_and_expectations(TELEMETRY_LOG_CAPACITY - 1, TELEMETRY_LOG_INDEX);
+    print_log(TELEMETRY_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    for (uint32_t i{0u}; i < TELEMETRY_LOG_CAPACITY; i++) {
-        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
-        add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
-    }
-    printf_telemetry_log();
-    fflush(stdout);
+    add_n_entries_to_log_and_expectations(TELEMETRY_LOG_CAPACITY, TELEMETRY_LOG_INDEX);
+    print_log(TELEMETRY_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
 }
 
@@ -287,8 +298,7 @@ TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
             add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
         }
     }
-    printf_telemetry_log();
-    fflush(stdout);
+    print_log(TELEMETRY_LOG_INDEX);
     CHECK(test_output_and_expectation_are_identical());
 }
 
