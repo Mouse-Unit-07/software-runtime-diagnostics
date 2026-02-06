@@ -494,27 +494,31 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogAssertsErrorAndCallsCallback)
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 {
-    struct log_entry expected{
-        create_one_dummy_entry(1, "some_file.c: error message", 2)};
-    add_one_entry(ERROR_LOG_INDEX, expected);
-    overflow_log(ERROR_LOG_INDEX, ERROR_LOG_CAPACITY);
-    CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
+    RUNTIME_ERROR(0, "some_file.c: error message", 0);
+    add_log_entry_to_expectations_file(0, "some_file.c: error message", 0);
+    for (uint32_t i{0u}; i < ERROR_LOG_CAPACITY; i++) {
+        RUNTIME_ERROR(i + 1, "some_file.c: error msg", i + 2);
+    }
+    printf_first_runtime_error_entry();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromFullWarningLog)
 {
-    struct log_entry expected{0};
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
-        struct log_entry new_entry{
-            create_one_dummy_entry(i, "some_file.c: warning msg", i + 1)};
-        add_one_entry(WARNING_LOG_INDEX, new_entry);
+        RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
         if (i == (WARNING_LOG_CAPACITY - 1)) {
-            expected = new_entry;
+            add_log_entry_to_expectations_file(i, "some_file.c: warning msg", i + 1);
         }
     }
-    overflow_log(WARNING_LOG_INDEX, WARNING_LOG_CAPACITY);
+    for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
+        RUNTIME_WARNING(i + 1, "some_file.c: warning msg", i + 2);
+    }
 
-    CHECK_LOG_ENTRY_EQUAL(expected, first_runtime_error_cause);
+    printf_first_runtime_error_entry();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, TelemetryLogPrintedWhenPartiallyFilled)
