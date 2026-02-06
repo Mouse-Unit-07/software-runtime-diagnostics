@@ -16,9 +16,27 @@
 #include "runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/
-/*                                 Debug Space                                */
+/*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
-/* keep empty */
+static void reset_all_flags(void);
+static struct log_entry create_log_entry(uint32_t timestamp,
+                                         const char *fail_message,
+                                         uint32_t fail_value);
+static void add_entry_to_circular_buffer(enum log_category log_index,
+                                         struct log_entry new_entry);
+bool is_log_full(enum log_category log_index);
+void save_entry_if_first_runtime_error(struct log_entry new_log);
+void assert_runtime_error_flag(void);
+void call_error_handler_if_set(void);
+void runtime_error_procedure(struct log_entry new_log);
+static void reset_log_entries(struct log_entry *entries, uint32_t entries_count);
+static void reset_circular_buffer(enum log_category log_index);
+static void reset_all_circular_buffers(void);
+void assert_error_handler_set_flag(void);
+struct log_entry get_entry_at_index(enum log_category log_index,
+                                    uint32_t entry_index);
+static void print_log_entry(struct log_entry entry);
+static void printf_log(enum log_category log_index);
 
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
@@ -46,12 +64,78 @@ bool user_error_handler_set = false;
 void (*user_error_handler)(void) = NULL;
 
 /*----------------------------------------------------------------------------*/
-/*                         Interrupt Service Routines                         */
+/*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
-/* none */
+void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
+                       uint32_t fail_value)
+{
+    add_entry_to_circular_buffer(
+        TELEMETRY_LOG_INDEX,
+        create_log_entry(timestamp, fail_message, fail_value));
+}
+
+void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
+                     uint32_t fail_value)
+{
+    struct log_entry new_entry =
+        create_log_entry(timestamp, fail_message, fail_value);
+    add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
+
+    if (is_log_full(WARNING_LOG_INDEX)) {
+        runtime_error_procedure(new_entry);
+    }
+}
+
+void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
+                   uint32_t fail_value)
+{
+    struct log_entry new_entry =
+        create_log_entry(timestamp, fail_message, fail_value);
+    add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
+
+    runtime_error_procedure(new_entry);
+}
+
+void set_error_handler_function(void (*handler_function)(void))
+{
+    user_error_handler = handler_function;
+    assert_error_handler_set_flag();
+}
+
+void printf_telemetry_log(void)
+{
+    printf_log(TELEMETRY_LOG_INDEX);
+}
+
+void printf_warning_log(void)
+{
+    printf_log(WARNING_LOG_INDEX);
+}
+
+void printf_error_log(void)
+{
+    printf_log(ERROR_LOG_INDEX);
+}
+
+void printf_first_runtime_error_entry(void)
+{
+    print_log_entry(first_runtime_error_cause);
+}
+
+void init_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
+}
+
+void deinit_runtime_diagnostics()
+{
+    reset_all_flags();
+    reset_all_circular_buffers();
+}
 
 /*----------------------------------------------------------------------------*/
-/*                         Private Function Prototypes                        */
+/*                        Private Function Definitions                        */
 /*----------------------------------------------------------------------------*/
 static void reset_all_flags(void)
 {
@@ -164,79 +248,3 @@ static void printf_log(enum log_category log_index)
         print_log_entry(entry);
     }
 }
-
-/*----------------------------------------------------------------------------*/
-/*                         Public Function Definitions                        */
-/*----------------------------------------------------------------------------*/
-void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
-                       uint32_t fail_value)
-{
-    add_entry_to_circular_buffer(
-        TELEMETRY_LOG_INDEX,
-        create_log_entry(timestamp, fail_message, fail_value));
-}
-
-void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
-                     uint32_t fail_value)
-{
-    struct log_entry new_entry =
-        create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
-
-    if (is_log_full(WARNING_LOG_INDEX)) {
-        runtime_error_procedure(new_entry);
-    }
-}
-
-void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
-                   uint32_t fail_value)
-{
-    struct log_entry new_entry =
-        create_log_entry(timestamp, fail_message, fail_value);
-    add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
-
-    runtime_error_procedure(new_entry);
-}
-
-void set_error_handler_function(void (*handler_function)(void))
-{
-    user_error_handler = handler_function;
-    assert_error_handler_set_flag();
-}
-
-void printf_telemetry_log(void)
-{
-    printf_log(TELEMETRY_LOG_INDEX);
-}
-
-void printf_warning_log(void)
-{
-    printf_log(WARNING_LOG_INDEX);
-}
-
-void printf_error_log(void)
-{
-    printf_log(ERROR_LOG_INDEX);
-}
-
-void printf_first_runtime_error_entry(void)
-{
-    print_log_entry(first_runtime_error_cause);
-}
-
-void init_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
-void deinit_runtime_diagnostics()
-{
-    reset_all_flags();
-    reset_all_circular_buffers();
-}
-
-/*----------------------------------------------------------------------------*/
-/*                        Private Function Definitions                        */
-/*----------------------------------------------------------------------------*/
-/* none */
