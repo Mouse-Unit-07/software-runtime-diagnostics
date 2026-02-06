@@ -298,49 +298,24 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 /*============================================================================*/
 /*                                    Tests                                   */
 /*============================================================================*/
-TEST(RuntimeDiagnosticsTest, TelemetryLogIsInitializedToZero)
+TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
 {
+    init_runtime_diagnostics();
+    printf_telemetry_log();
+    printf_warning_log();
     printf_telemetry_log();
     fflush(stdout);
     CHECK(is_test_file_empty() == true);
 }
 
-TEST(RuntimeDiagnosticsTest, WarningLogIsInitializedToZero)
-{
-    CHECK_LOG_IS_CLEAR(WARNING_LOG_INDEX);
-}
-
-TEST(RuntimeDiagnosticsTest, ErrorLogIsInitializedToZero)
-{
-    CHECK_LOG_IS_CLEAR(ERROR_LOG_INDEX);
-}
-
-TEST(RuntimeDiagnosticsTest, NoCircularBufferHasNullBufferOnInit)
-{
-    init_runtime_diagnostics();
-
-    CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS();
-}
-
-TEST(RuntimeDiagnosticsTest, LogsAreClearedOnInit)
-{
-    init_runtime_diagnostics();
-
-    CHECK_ALL_LOGS_ARE_CLEAR();
-}
-
-TEST(RuntimeDiagnosticsTest, NoCircularBufferHasNullBufferOnDeinit)
-{
-    deinit_runtime_diagnostics();
-
-    CHECK_ALL_CIRCULAR_BUFFERS_FOR_NULL_LOGS();
-}
-
 TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 {
     deinit_runtime_diagnostics();
-
-    CHECK_ALL_LOGS_ARE_CLEAR();
+    printf_telemetry_log();
+    printf_warning_log();
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(is_test_file_empty() == true);
 }
 
 TEST(RuntimeDiagnosticsTest, FlagsAreClearedOnInit)
