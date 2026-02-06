@@ -451,7 +451,13 @@ TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
 {
-    ADD_N_ENTRIES_AND_CHECK(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY);
+    for (uint32_t i{0u}; i < TELEMETRY_LOG_CAPACITY; i++) {
+        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
+        add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
+    }
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
