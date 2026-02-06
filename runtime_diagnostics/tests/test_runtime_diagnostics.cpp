@@ -172,17 +172,12 @@ void print_all_logs_and_expect_empty_output(void)
 {
     print_all_logs();
     fflush(stdout);
-    CHECK(is_test_file_empty() == true);
+    CHECK(is_test_file_empty());
 }
 
 void dummy_callback_function(void)
 {
     dummy_error_callback_called = true;
-}
-
-void check_dummy_callback_called_flag_asserted(void)
-{
-    CHECK(dummy_error_callback_called == true);
 }
 
 void add_n_entries_to_log_and_expectations(uint32_t n, enum log_category index)
@@ -329,20 +324,20 @@ TEST(RuntimeDiagnosticsTest, OverflowEntriesToErrorLog)
     overflow_by_n_entries_and_check(107u, ERROR_LOG_INDEX);
 }
 
-TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
+TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsHandlerWhenSet)
 {
     set_error_handler(dummy_callback_function);
     RUNTIME_ERROR(1, "some_file.c: error message", 2);
-    check_dummy_callback_called_flag_asserted();
+    CHECK(dummy_error_callback_called);
 }
 
-TEST(RuntimeDiagnosticsTest, FullWarningLogCallsCallbackWhenSet)
+TEST(RuntimeDiagnosticsTest, FullWarningLogCallsHandlerWhenSet)
 {
     set_warning_handler(dummy_callback_function);
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
         RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
     }
-    check_dummy_callback_called_flag_asserted();
+    CHECK(dummy_error_callback_called);
 }
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)

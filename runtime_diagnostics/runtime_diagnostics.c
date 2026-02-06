@@ -53,7 +53,6 @@ static void save_entry_if_first_runtime_error(struct log_entry new_log);
 static void assert_runtime_error_flag(void);
 static void call_warning_handler_if_set(void);
 static void call_error_handler_if_set(void);
-static void runtime_error_procedure(struct log_entry new_log);
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count);
 static void reset_circular_buffer(enum log_category log_index);
 static void reset_all_circular_buffers(void);
