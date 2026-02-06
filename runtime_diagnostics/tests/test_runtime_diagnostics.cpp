@@ -214,6 +214,21 @@ void check_an_entry_added_to_one_log_only(enum log_category index)
     CHECK(test_output_and_expectation_are_identical());
 }
 
+void overflow_by_n_entries_and_check(uint32_t n, enum log_category index)
+{
+    uint32_t overflow_entries_count{n};
+    uint32_t total_entries{overflow_entries_count + log_capacities_array[index]};
+    uint32_t start_recording_index{overflow_entries_count};
+    for (uint32_t i{0u}; i < total_entries; i++) {
+        runtime_functions[index](i, "some_file.c: some msg", i + 1);
+        if (i >= start_recording_index) {
+            add_log_entry_to_expectations_file(i, "some_file.c: some msg", i + 1);
+        }
+    }
+    print_log(index);
+    CHECK(test_output_and_expectation_are_identical());
+}
+
 /*============================================================================*/
 /*                                 Test Group                                 */
 /*============================================================================*/
@@ -298,17 +313,8 @@ TEST(RuntimeDiagnosticsTest, AddMaxEntriesToErrorLog)
 
 TEST(RuntimeDiagnosticsTest, OverflowEntriesToTelemetryLog)
 {
-    uint32_t overflow_entries_count{17u}; // arbitrary prime number
-    uint32_t total_entries{overflow_entries_count + TELEMETRY_LOG_CAPACITY};
-    uint32_t start_recording_index{overflow_entries_count};
-    for (uint32_t i{0u}; i < total_entries; i++) {
-        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
-        if (i >= start_recording_index) {
-            add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
-        }
-    }
-    print_log(TELEMETRY_LOG_INDEX);
-    CHECK(test_output_and_expectation_are_identical());
+    // overflowing by arbitrary prime number
+    overflow_by_n_entries_and_check(107u, TELEMETRY_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsCallbackWhenSet)
