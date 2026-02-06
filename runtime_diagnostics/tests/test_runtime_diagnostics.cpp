@@ -428,16 +428,25 @@ TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
-    ADD_ONE_ENTRY_AND_CHECK(
-        ERROR_LOG_INDEX,
-        create_one_dummy_entry(1, "some_file.c: error message", 2));
-
-    CHECK_ALL_OTHER_LOGS_ARE_CLEAR(ERROR_LOG_INDEX);
+    RUNTIME_ERROR(1, "some_file.c: error message", 2);
+    add_log_entry_to_expectations_file(1, "some_file.c: error message", 2);
+    printf_error_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
+    clear_all_test_files();
+    print_all_logs();
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
 {
-    ADD_N_ENTRIES_AND_CHECK(TELEMETRY_LOG_INDEX, TELEMETRY_LOG_CAPACITY - 1);
+    for (uint32_t i{0u}; i < TELEMETRY_LOG_CAPACITY - 1; i++) {
+        RUNTIME_TELEMETRY(i, "some_file.c: telemetry msg", i + 1);
+        add_log_entry_to_expectations_file(i, "some_file.c: telemetry msg", i + 1);
+    }
+    printf_telemetry_log();
+    fflush(stdout);
+    CHECK(test_output_and_expectation_are_identical());
 }
 
 TEST(RuntimeDiagnosticsTest, AddMaxEntriesToTelemetryLog)
