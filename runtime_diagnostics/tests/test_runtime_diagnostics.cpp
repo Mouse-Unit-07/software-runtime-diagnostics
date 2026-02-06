@@ -36,7 +36,21 @@ extern void (*user_error_handler)(void);
 
 volatile bool dummy_error_callback_called{false};
 
-static FILE *saved_output{nullptr};
+FILE *standard_output{nullptr};
+constexpr const char *TEST_FILE{"test_output.txt"};
+
+void redirect_stdout_to_file(void)
+{
+    standard_output = stdout;
+    CHECK(freopen(TEST_FILE, "w+", stdout) != nullptr);
+}
+
+void restore_stdout(void)
+{
+    CHECK(stdout != nullptr);
+    fclose(stdout);
+    CHECK(freopen("CON", "w", standard_output) != nullptr);
+}
 
 void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
                                                 const char *fail_message,
@@ -182,22 +196,6 @@ void dummy_callback_function(void)
     dummy_error_callback_called = true;
 }
 
-void redirect_stdout(const char *filename)
-{
-    fflush(stdout);
-    saved_output = freopen(filename, "w", stdout);
-    CHECK(saved_output != nullptr);
-}
-
-void restore_stdout(void)
-{
-    fflush(stdout);
-    CHECK(saved_output != nullptr);
-    if (saved_output) {
-        freopen("CON", "w", stdout);
-    }
-}
-
 bool is_file_empty(FILE *file)
 {
     int c{fgetc(file)};
@@ -231,11 +229,10 @@ void COMPARE_LOG_AND_FILE(FILE *file, enum log_category log_index)
 void PRINT_LOG_TO_FILE_AND_CHECK_FILE(enum log_category log_index,
                                       void (*print_function)(void))
 {
-    const char *TEST_FILENAME{"test_output.txt"};
-    redirect_stdout(TEST_FILENAME);
+    redirect_stdout_to_file();
     print_function();
     restore_stdout();
-    FILE *file{fopen(TEST_FILENAME, "r")};
+    FILE *file{fopen(TEST_FILE, "r")};
     CHECK(file != nullptr);
     CHECK(!is_file_empty(file));
 
@@ -259,6 +256,7 @@ TEST_GROUP(RuntimeDiagnosticsTest)
 {
     void setup() override
     {
+        redirect_stdout_to_file();
         dummy_error_callback_called = false;
         init_runtime_diagnostics();
     }
@@ -267,6 +265,7 @@ TEST_GROUP(RuntimeDiagnosticsTest)
     {
         deinit_runtime_diagnostics();
         dummy_error_callback_called = false;
+        restore_stdout();
     }
 };
 
