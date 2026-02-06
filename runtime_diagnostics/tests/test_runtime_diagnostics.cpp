@@ -29,7 +29,7 @@ FILE *standard_output{nullptr};
 constexpr const char *TEST_OUTPUT_FILE{"test_output.txt"};
 constexpr const char *TEST_EXPECTATIONS_FILE{"test_expectations.txt"};
 
-void (*runtime_functions[LOG_CATEGORIES_COUNT])(uint32_t timestamp,
+void (*runtime_functions[])(uint32_t timestamp,
                                                 const char *fail_message,
                                                 uint32_t fail_value){
     RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR

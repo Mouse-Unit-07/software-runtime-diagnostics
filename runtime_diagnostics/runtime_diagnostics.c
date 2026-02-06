@@ -16,6 +16,30 @@
 #include "runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/
+/*                           Struct, Enum, Typedefs                           */
+/*----------------------------------------------------------------------------*/
+struct log_entry {
+    uint32_t timestamp;
+    const char *fail_message;
+    uint32_t fail_value;
+};
+
+struct circular_buffer {
+    struct log_entry *log_entries;
+    uint32_t log_capacity;
+    uint32_t head;
+    uint32_t current_size;
+};
+
+enum log_category
+{
+    TELEMETRY_LOG_INDEX = 0,
+    WARNING_LOG_INDEX,
+    ERROR_LOG_INDEX,
+    LOG_CATEGORIES_COUNT
+};
+
+/*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
 static void reset_all_flags(void);
@@ -41,12 +65,13 @@ static void printf_log(enum log_category log_index);
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
 /*----------------------------------------------------------------------------*/
+enum log_category log_category_array[LOG_CATEGORIES_COUNT] = {
+    TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX
+};
+
 struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_CAPACITY] = {{0}};
 struct log_entry error_entries[ERROR_LOG_CAPACITY] = {{0}};
-
-enum log_category log_category_array[LOG_CATEGORIES_COUNT] = {
-    TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX};
 
 struct circular_buffer telemetry_cb \
         = {telemetry_entries, TELEMETRY_LOG_CAPACITY, 0, 0};
