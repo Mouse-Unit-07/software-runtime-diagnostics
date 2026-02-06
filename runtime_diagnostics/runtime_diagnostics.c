@@ -81,7 +81,8 @@ struct circular_buffer error_cb \
         = {error_entries, ERROR_LOG_CAPACITY, 0, 0};
 
 struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] = {
-    &telemetry_cb, &warning_cb, &error_cb};
+    &telemetry_cb, &warning_cb, &error_cb
+};
 
 volatile bool runtime_error_asserted = false;
 struct log_entry first_runtime_error_cause = {0};
@@ -94,16 +95,15 @@ void (*user_error_handler)(void) = NULL;
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
                        uint32_t fail_value)
 {
-    add_entry_to_circular_buffer(
-        TELEMETRY_LOG_INDEX,
+    add_entry_to_circular_buffer(TELEMETRY_LOG_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
 }
 
 void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
                      uint32_t fail_value)
 {
-    struct log_entry new_entry =
-        create_log_entry(timestamp, fail_message, fail_value);
+    struct log_entry new_entry = create_log_entry(
+        timestamp, fail_message, fail_value);
     add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
 
     if (is_log_full(WARNING_LOG_INDEX)) {
@@ -114,8 +114,8 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
 void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
                    uint32_t fail_value)
 {
-    struct log_entry new_entry =
-        create_log_entry(timestamp, fail_message, fail_value);
+    struct log_entry new_entry = create_log_entry(
+        timestamp, fail_message, fail_value);
     add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
 
     runtime_error_procedure(new_entry);
@@ -172,8 +172,7 @@ static struct log_entry create_log_entry(uint32_t timestamp,
                                          const char *fail_message,
                                          uint32_t fail_value)
 {
-    struct log_entry new_entry = {timestamp, fail_message, fail_value};
-    return new_entry;
+    return (struct log_entry){timestamp, fail_message, fail_value};
 }
 
 static void add_entry_to_circular_buffer(enum log_category log_index,
@@ -266,8 +265,8 @@ static void print_log_entry(struct log_entry entry)
 
 static void printf_log(enum log_category log_index)
 {
-    for (uint32_t i = 0u; i < circular_buffer_array[log_index]->current_size;
-         i++) {
+    uint32_t current_size = circular_buffer_array[log_index]->current_size;
+    for (uint32_t i = 0u; i < current_size; i++) {
         struct log_entry entry = get_entry_at_index(log_index, i);
         print_log_entry(entry);
     }
