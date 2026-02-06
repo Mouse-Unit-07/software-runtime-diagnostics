@@ -24,15 +24,15 @@ static struct log_entry create_log_entry(uint32_t timestamp,
                                          uint32_t fail_value);
 static void add_entry_to_circular_buffer(enum log_category log_index,
                                          struct log_entry new_entry);
-bool is_log_full(enum log_category log_index);
-void save_entry_if_first_runtime_error(struct log_entry new_log);
-void assert_runtime_error_flag(void);
-void call_error_handler_if_set(void);
-void runtime_error_procedure(struct log_entry new_log);
+static bool is_log_full(enum log_category log_index);
+static void save_entry_if_first_runtime_error(struct log_entry new_log);
+static void assert_runtime_error_flag(void);
+static void call_error_handler_if_set(void);
+static void runtime_error_procedure(struct log_entry new_log);
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count);
 static void reset_circular_buffer(enum log_category log_index);
 static void reset_all_circular_buffers(void);
-void assert_error_handler_set_flag(void);
+static void assert_error_handler_set_flag(void);
 struct log_entry get_entry_at_index(enum log_category log_index,
                                     uint32_t entry_index);
 static void print_log_entry(struct log_entry entry);
@@ -164,32 +164,32 @@ static void add_entry_to_circular_buffer(enum log_category log_index,
     }
 }
 
-bool is_log_full(enum log_category log_index)
+static bool is_log_full(enum log_category log_index)
 {
     return circular_buffer_array[log_index]->log_capacity ==
            circular_buffer_array[log_index]->current_size;
 }
 
-void save_entry_if_first_runtime_error(struct log_entry new_log)
+static void save_entry_if_first_runtime_error(struct log_entry new_log)
 {
     if (!runtime_error_asserted) {
         first_runtime_error_cause = new_log;
     }
 }
 
-void assert_runtime_error_flag(void)
+static void assert_runtime_error_flag(void)
 {
     runtime_error_asserted = true;
 }
 
-void call_error_handler_if_set(void)
+static void call_error_handler_if_set(void)
 {
     if (user_error_handler_set) {
         user_error_handler();
     }
 }
 
-void runtime_error_procedure(struct log_entry new_log)
+static void runtime_error_procedure(struct log_entry new_log)
 {
     save_entry_if_first_runtime_error(new_log);
     assert_runtime_error_flag();
@@ -216,7 +216,7 @@ static void reset_all_circular_buffers(void)
     }
 }
 
-void assert_error_handler_set_flag(void)
+static void assert_error_handler_set_flag(void)
 {
     user_error_handler_set = true;
 }
