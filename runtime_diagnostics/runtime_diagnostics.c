@@ -134,6 +134,10 @@ void set_error_handler(void (*handler)(void))
 {
     user_error_handler = handler;
     user_error_handler_set = true;
+
+    if (runtime_error_asserted) {
+        user_error_handler();
+    }
 }
 
 void printf_telemetry_log(void)

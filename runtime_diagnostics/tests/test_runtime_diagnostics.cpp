@@ -331,6 +331,14 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsHandlerWhenSet)
     CHECK(dummy_error_callback_called);
 }
 
+TEST(RuntimeDiagnosticsTest, ErrorHandlerCalledWhenErrorAlreadyAsserted)
+{
+    RUNTIME_ERROR(1, "some_file.c: error message", 2);
+    CHECK(!dummy_error_callback_called);
+    set_error_handler(dummy_callback_function);
+    CHECK(dummy_error_callback_called);
+}
+
 TEST(RuntimeDiagnosticsTest, FullWarningLogCallsHandlerWhenSet)
 {
     set_warning_handler(dummy_callback_function);
