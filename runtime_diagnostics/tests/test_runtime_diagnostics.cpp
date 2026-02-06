@@ -206,6 +206,14 @@ void add_n_entries_to_log_and_check(uint32_t n, enum log_category index)
     CHECK(test_output_and_expectation_are_identical());
 }
 
+void check_an_entry_added_to_one_log_only(enum log_category index)
+{
+    add_n_entries_to_log_and_check(1, index);
+    clear_all_test_files();
+    print_all_logs();
+    CHECK(test_output_and_expectation_are_identical());
+}
+
 /*============================================================================*/
 /*                                 Test Group                                 */
 /*============================================================================*/
@@ -245,26 +253,17 @@ TEST(RuntimeDiagnosticsTest, LogsAreClearedOnDeinit)
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToTelemetryLogOnly)
 {
-    add_n_entries_to_log_and_check(1, TELEMETRY_LOG_INDEX);
-    clear_all_test_files();
-    print_all_logs();
-    CHECK(test_output_and_expectation_are_identical());
+    check_an_entry_added_to_one_log_only(TELEMETRY_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToWarningLogOnly)
 {
-    add_n_entries_to_log_and_check(1, WARNING_LOG_INDEX);
-    clear_all_test_files();
-    print_all_logs();
-    CHECK(test_output_and_expectation_are_identical());
+    check_an_entry_added_to_one_log_only(WARNING_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneEntryToErrorLogOnly)
 {
-    add_n_entries_to_log_and_check(1, ERROR_LOG_INDEX);
-    clear_all_test_files();
-    print_all_logs();
-    CHECK(test_output_and_expectation_are_identical());
+    check_an_entry_added_to_one_log_only(ERROR_LOG_INDEX);
 }
 
 TEST(RuntimeDiagnosticsTest, AddOneLessThanMaxEntriesToTelemetryLog)
