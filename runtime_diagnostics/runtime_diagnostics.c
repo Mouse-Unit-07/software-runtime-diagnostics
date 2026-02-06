@@ -51,12 +51,12 @@ static void add_entry_to_circular_buffer(enum log_category log_index,
 static bool is_log_full(enum log_category log_index);
 static void save_entry_if_first_runtime_error(struct log_entry new_log);
 static void assert_runtime_error_flag(void);
+static void call_warning_handler_if_set(void);
 static void call_error_handler_if_set(void);
 static void runtime_error_procedure(struct log_entry new_log);
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count);
 static void reset_circular_buffer(enum log_category log_index);
 static void reset_all_circular_buffers(void);
-static void assert_error_handler_set_flag(void);
 static struct log_entry get_entry_at_index(enum log_category log_index,
                                     uint32_t entry_index);
 static void print_log_entry(struct log_entry entry);
@@ -86,7 +86,9 @@ struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] = {
 
 volatile bool runtime_error_asserted = false;
 struct log_entry first_runtime_error_cause = {0};
+bool user_warning_handler_set = false;
 bool user_error_handler_set = false;
+void (*user_warning_handler)(void) = NULL;
 void (*user_error_handler)(void) = NULL;
 
 /*----------------------------------------------------------------------------*/
@@ -107,7 +109,7 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
     add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
 
     if (is_log_full(WARNING_LOG_INDEX)) {
-        runtime_error_procedure(new_entry);
+        call_warning_handler_if_set();
     }
 }
 
@@ -118,13 +120,21 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
         timestamp, fail_message, fail_value);
     add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
 
-    runtime_error_procedure(new_entry);
+    save_entry_if_first_runtime_error(new_entry);
+    assert_runtime_error_flag();
+    call_error_handler_if_set();
 }
 
-void set_error_handler_function(void (*handler_function)(void))
+void set_warning_handler(void (*handler)(void))
 {
-    user_error_handler = handler_function;
-    assert_error_handler_set_flag();
+    user_warning_handler = handler;
+    user_warning_handler_set = true;
+}
+
+void set_error_handler(void (*handler)(void))
+{
+    user_error_handler = handler;
+    user_error_handler_set = true;
 }
 
 void printf_telemetry_log(void)
@@ -206,18 +216,18 @@ static void assert_runtime_error_flag(void)
     runtime_error_asserted = true;
 }
 
+static void call_warning_handler_if_set(void)
+{
+    if (user_warning_handler_set) {
+        user_warning_handler();
+    }
+}
+
 static void call_error_handler_if_set(void)
 {
     if (user_error_handler_set) {
         user_error_handler();
     }
-}
-
-static void runtime_error_procedure(struct log_entry new_log)
-{
-    save_entry_if_first_runtime_error(new_log);
-    assert_runtime_error_flag();
-    call_error_handler_if_set();
 }
 
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count)
@@ -238,11 +248,6 @@ static void reset_all_circular_buffers(void)
     for (uint32_t i = 0u; i < LOG_CATEGORIES_COUNT; i++) {
         reset_circular_buffer(log_category_array[i]);
     }
-}
-
-static void assert_error_handler_set_flag(void)
-{
-    user_error_handler_set = true;
 }
 
 static struct log_entry get_entry_at_index(enum log_category log_index,
