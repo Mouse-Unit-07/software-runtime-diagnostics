@@ -180,17 +180,6 @@ void dummy_callback_function(void)
     dummy_error_callback_called = true;
 }
 
-bool is_file_empty(FILE *file)
-{
-    int c{fgetc(file)};
-    if (c == EOF) {
-        return true;
-    }
-    ungetc(c, file);
-
-    return false;
-}
-
 void check_dummy_callback_called_flag_asserted(void)
 {
     CHECK(dummy_error_callback_called == true);
