@@ -26,6 +26,11 @@ void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message, uint32_t fail_v
 
 void set_warning_handler(void (*handler)(void));
 void set_error_handler(void (*handler)(void));
+
+uint32_t get_telemetry_log_current_size(void);
+uint32_t get_warning_log_current_size(void);
+uint32_t get_error_log_current_size(void);
+
 void printf_telemetry_log(void);
 void printf_warning_log(void);
 void printf_error_log(void);

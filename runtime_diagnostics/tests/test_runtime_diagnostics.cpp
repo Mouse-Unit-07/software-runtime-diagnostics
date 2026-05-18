@@ -56,9 +56,8 @@ void redirect_stdout_to_file(void)
 
 void restore_stdout(void)
 {
-    CHECK(stdout != nullptr);
-    fclose(stdout);
-    CHECK(freopen("CON", "w", standard_output) != nullptr);
+    fflush(stdout);
+    freopen("CON", "w", stdout);
 }
 
 bool is_test_file_empty(void)
@@ -166,7 +165,7 @@ void print_all_logs(void)
 {
     printf_telemetry_log();
     printf_warning_log();
-    printf_telemetry_log();
+    printf_error_log();
 }
 
 void print_all_logs_and_expect_empty_output(void)
@@ -379,14 +378,18 @@ TEST(RuntimeDiagnosticsTest, RuntimeFunctionCallCountsAreKept)
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
+
+    FILE *file{fopen(TEST_EXPECTATIONS_FILE, "w")};
+    CHECK(file != nullptr);
+
+    CHECK(fprintf(file, "telemetry: 3\r\n") > 0);
+    CHECK(fprintf(file, "warning: 2\r\n") > 0);
+    CHECK(fprintf(file, "error: 1\r\n") > 0);
+
+    fclose(file);
+
     printf_call_counts();
     fflush(stdout);
-    char buffer[64];
-    FILE *file{fopen(TEST_OUTPUT_FILE, "r")};
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "telemetry: 3\r\n") == 0);
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "warning: 2\r\n") == 0);
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "error: 1\r\n") == 0);
+
+    CHECK(test_output_and_expectation_are_identical());
 }

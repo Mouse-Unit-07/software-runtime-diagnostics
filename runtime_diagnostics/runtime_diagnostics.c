@@ -42,7 +42,7 @@ enum log_category
 /*----------------------------------------------------------------------------*/
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
-static void reset_all_flags(void);
+static void reset_runtime_diagnostics_state(void);
 static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
                                          uint32_t fail_value);
 static void add_entry_to_circular_buffer(enum log_category log_index, struct log_entry new_entry);
@@ -92,7 +92,7 @@ void (*user_error_handler)(void) = NULL;
 void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message, uint32_t fail_value)
 {
     add_entry_to_circular_buffer(TELEMETRY_LOG_INDEX,
-        create_log_entry(timestamp, fail_message, fail_value));
+                                 create_log_entry(timestamp, fail_message, fail_value));
 }
 
 void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message, uint32_t fail_value)
@@ -164,23 +164,28 @@ void printf_call_counts(void)
 
 void init_runtime_diagnostics()
 {
-    reset_all_flags();
+    reset_runtime_diagnostics_state();
     reset_all_circular_buffers();
 }
 
 void deinit_runtime_diagnostics()
 {
-    reset_all_flags();
+    reset_runtime_diagnostics_state();
     reset_all_circular_buffers();
 }
 
 /*----------------------------------------------------------------------------*/
 /*                        Private Function Definitions                        */
 /*----------------------------------------------------------------------------*/
-static void reset_all_flags(void)
+static void reset_runtime_diagnostics_state(void)
 {
+    memset(call_counts_array, 0, sizeof(call_counts_array));
     runtime_error_asserted = false;
     user_error_handler_set = false;
+    user_warning_handler_set = false;
+    memset(&first_runtime_error_cause, 0, sizeof(first_runtime_error_cause));
+    user_warning_handler = NULL;
+    user_error_handler = NULL;
 }
 
 static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
