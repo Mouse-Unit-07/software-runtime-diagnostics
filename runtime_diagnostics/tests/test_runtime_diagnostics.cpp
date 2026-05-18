@@ -383,6 +383,13 @@ TEST(RuntimeDiagnosticsTest, WarningHandlerCalledWhenWarningLogAlreadyFull)
     CHECK(dummy_error_callback_called);
 }
 
+TEST(RuntimeDiagnosticsTest, FirstErrorNotPrintedIfErrorFunctionNeverCalled)
+{
+    printf_first_runtime_error_entry();
+    fflush(stdout);
+    CHECK(is_test_file_empty());
+}
+
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
 {
     RUNTIME_ERROR(0, "some_file.c: error message", 0);

@@ -168,7 +168,9 @@ void printf_error_log(void)
 
 void printf_first_runtime_error_entry(void)
 {
-    print_log_entry(first_runtime_error_cause);
+    if (get_current_size_of_log(ERROR_LOG_INDEX) != 0){
+        print_log_entry(first_runtime_error_cause);
+    }
 }
 
 void printf_call_counts(void)
