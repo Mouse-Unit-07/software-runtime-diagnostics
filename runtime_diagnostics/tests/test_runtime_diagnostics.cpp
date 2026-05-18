@@ -43,6 +43,9 @@ enum log_category
 void (*runtime_functions[])(uint32_t timestamp, const char *fail_message, uint32_t fail_value) = {
     RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
+uint32_t (*get_log_current_size_functions[])(void) = {
+    get_telemetry_log_current_size, get_warning_log_current_size, get_error_log_current_size};
+
 void (*print_functions[])(void) = {printf_telemetry_log, printf_warning_log, printf_error_log};
 
 uint32_t log_capacities_array[] = {TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY,
@@ -224,6 +227,28 @@ void overflow_by_n_entries_and_check(uint32_t n, enum log_category index)
     CHECK(test_output_and_expectation_are_identical());
 }
 
+void check_log_initial_size_is_zero(enum log_category index)
+{
+    CHECK_EQUAL(0u, get_log_current_size_functions[index]());
+}
+
+void add_n_entries_and_check_log_size(uint32_t n, uint32_t expected_size, enum log_category index)
+{
+    for (uint32_t i{0u}; i < n; i++) {
+        runtime_functions[index](i, "some_file.c: some msg", i + 1);
+    }
+
+    CHECK_EQUAL(expected_size, get_log_current_size_functions[index]());
+}
+
+void check_log_size_saturates_at_capacity(enum log_category index)
+{
+    const uint32_t overflow_count{107u};
+
+    add_n_entries_and_check_log_size(log_capacities_array[index] + overflow_count,
+                                     log_capacities_array[index], index);
+}
+
 /*============================================================================*/
 /*                                 Test Group                                 */
 /*============================================================================*/
@@ -392,4 +417,83 @@ TEST(RuntimeDiagnosticsTest, RuntimeFunctionCallCountsAreKept)
     fflush(stdout);
 
     CHECK(test_output_and_expectation_are_identical());
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, InitResetsAllLogSizesToZero)
+{
+    RUNTIME_TELEMETRY(0, "msg", 0);
+    RUNTIME_WARNING(0, "msg", 0);
+    RUNTIME_ERROR(0, "msg", 0);
+
+    CHECK(get_telemetry_log_current_size() > 0u);
+    CHECK(get_warning_log_current_size() > 0u);
+    CHECK(get_error_log_current_size() > 0u);
+
+    init_runtime_diagnostics();
+
+    CHECK_EQUAL(0u, get_telemetry_log_current_size());
+    CHECK_EQUAL(0u, get_warning_log_current_size());
+    CHECK_EQUAL(0u, get_error_log_current_size());
+}
+
+TEST(RuntimeDiagnosticsTest, DeinitResetsAllLogSizesToZero)
+{
+    RUNTIME_TELEMETRY(0, "msg", 0);
+    RUNTIME_WARNING(0, "msg", 0);
+    RUNTIME_ERROR(0, "msg", 0);
+
+    CHECK(get_telemetry_log_current_size() > 0u);
+    CHECK(get_warning_log_current_size() > 0u);
+    CHECK(get_error_log_current_size() > 0u);
+
+    deinit_runtime_diagnostics();
+
+    CHECK_EQUAL(0u, get_telemetry_log_current_size());
+    CHECK_EQUAL(0u, get_warning_log_current_size());
+    CHECK_EQUAL(0u, get_error_log_current_size());
 }

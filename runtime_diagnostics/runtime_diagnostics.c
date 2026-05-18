@@ -47,6 +47,7 @@ static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_me
                                          uint32_t fail_value);
 static void add_entry_to_circular_buffer(enum log_category log_index, struct log_entry new_entry);
 static bool is_log_full(enum log_category log_index);
+static uint32_t get_current_size_of_log(enum log_category log_index);
 static void save_entry_if_first_runtime_error(struct log_entry new_log);
 static void assert_runtime_error_flag(void);
 static void call_warning_handler_if_set(void);
@@ -135,6 +136,21 @@ void set_error_handler(void (*handler)(void))
     }
 }
 
+uint32_t get_telemetry_log_current_size(void)
+{
+    return get_current_size_of_log(TELEMETRY_LOG_INDEX);
+}
+
+uint32_t get_warning_log_current_size(void)
+{
+    return get_current_size_of_log(WARNING_LOG_INDEX);
+}
+
+uint32_t get_error_log_current_size(void)
+{
+    return get_current_size_of_log(ERROR_LOG_INDEX);
+}
+
 void printf_telemetry_log(void)
 {
     printf_log(TELEMETRY_LOG_INDEX);
@@ -211,6 +227,11 @@ static bool is_log_full(enum log_category log_index)
 {
     return circular_buffer_array[log_index]->log_capacity
            == circular_buffer_array[log_index]->current_size;
+}
+
+static uint32_t get_current_size_of_log(enum log_category log_index)
+{
+    return circular_buffer_array[log_index]->current_size;
 }
 
 static void save_entry_if_first_runtime_error(struct log_entry new_log)
