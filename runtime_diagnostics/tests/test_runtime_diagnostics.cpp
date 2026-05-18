@@ -8,17 +8,20 @@
 /*============================================================================*/
 /*                               Include Files                                */
 /*============================================================================*/
-extern "C" {
-#include <stdint.h>
+extern "C"
+{
+
 #include <inttypes.h>
+#include <stdint.h>
 #include "runtime_diagnostics.h"
+
 }
 
+#include <CppUTest/TestHarness.h>
 #include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <CppUTest/TestHarness.h>
 
 /*============================================================================*/
 /*                             Public Definitions                             */
@@ -37,18 +40,16 @@ enum log_category
     LOG_CATEGORIES_COUNT
 };
 
-void (*runtime_functions[])(
-        uint32_t timestamp, const char *fail_message, uint32_t fail_value){
-    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR
-};
+void (*runtime_functions[])(uint32_t timestamp, const char *fail_message, uint32_t fail_value) = {
+    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
-void (*print_functions[])(void){
-    printf_telemetry_log, printf_warning_log, printf_error_log
-};
+uint32_t (*get_log_current_size_functions[])(void) = {
+    get_telemetry_log_current_size, get_warning_log_current_size, get_error_log_current_size};
 
-uint32_t log_capacities_array[] = {
-    TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY, ERROR_LOG_CAPACITY
-};
+void (*print_functions[])(void) = {printf_telemetry_log, printf_warning_log, printf_error_log};
+
+uint32_t log_capacities_array[] = {TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY,
+                                   ERROR_LOG_CAPACITY};
 
 void redirect_stdout_to_file(void)
 {
@@ -58,9 +59,8 @@ void redirect_stdout_to_file(void)
 
 void restore_stdout(void)
 {
-    CHECK(stdout != nullptr);
-    fclose(stdout);
-    CHECK(freopen("CON", "w", standard_output) != nullptr);
+    fflush(stdout);
+    freopen("CON", "w", stdout);
 }
 
 bool is_test_file_empty(void)
@@ -94,7 +94,7 @@ bool is_test_file_empty(void)
 
 void clear_all_test_files(void)
 {
-    FILE* file{fopen(TEST_OUTPUT_FILE, "w")};
+    FILE *file{fopen(TEST_OUTPUT_FILE, "w")};
     CHECK(file != nullptr);
     fclose(file);
     file = fopen(TEST_EXPECTATIONS_FILE, "w");
@@ -102,11 +102,10 @@ void clear_all_test_files(void)
     fclose(file);
 }
 
-void add_log_entry_to_expectations_file(uint32_t timestamp,
-                                       const char* fail_message,
-                                       uint32_t fail_value)
+void add_log_entry_to_expectations_file(uint32_t timestamp, const char *fail_message,
+                                        uint32_t fail_value)
 {
-    FILE* file{fopen(TEST_EXPECTATIONS_FILE, "a")};
+    FILE *file{fopen(TEST_EXPECTATIONS_FILE, "a")};
     CHECK(file != nullptr);
 
     const int written = fprintf(
@@ -123,12 +122,16 @@ void add_log_entry_to_expectations_file(uint32_t timestamp,
 
 bool test_output_and_expectation_are_identical(void)
 {
-    FILE* a{fopen(TEST_OUTPUT_FILE, "rb")};
-    FILE* b{fopen(TEST_EXPECTATIONS_FILE, "rb")};
+    FILE *a{fopen(TEST_OUTPUT_FILE, "rb")};
+    FILE *b{fopen(TEST_EXPECTATIONS_FILE, "rb")};
 
     if (!a || !b) {
-        if (a) fclose(a);
-        if (b) fclose(b);
+        if (a) {
+            fclose(a);
+        }
+        if (b) {
+            fclose(b);
+        }
         return false;
     }
 
@@ -165,7 +168,7 @@ void print_all_logs(void)
 {
     printf_telemetry_log();
     printf_warning_log();
-    printf_telemetry_log();
+    printf_error_log();
 }
 
 void print_all_logs_and_expect_empty_output(void)
@@ -222,6 +225,28 @@ void overflow_by_n_entries_and_check(uint32_t n, enum log_category index)
     }
     print_log(index);
     CHECK(test_output_and_expectation_are_identical());
+}
+
+void check_log_initial_size_is_zero(enum log_category index)
+{
+    CHECK_EQUAL(0u, get_log_current_size_functions[index]());
+}
+
+void add_n_entries_and_check_log_size(uint32_t n, uint32_t expected_size, enum log_category index)
+{
+    for (uint32_t i{0u}; i < n; i++) {
+        runtime_functions[index](i, "some_file.c: some msg", i + 1);
+    }
+
+    CHECK_EQUAL(expected_size, get_log_current_size_functions[index]());
+}
+
+void check_log_size_saturates_at_capacity(enum log_category index)
+{
+    const uint32_t overflow_count{107u};
+
+    add_n_entries_and_check_log_size(log_capacities_array[index] + overflow_count,
+                                     log_capacities_array[index], index);
 }
 
 /*============================================================================*/
@@ -350,13 +375,19 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogCallsHandlerWhenSet)
 
 TEST(RuntimeDiagnosticsTest, WarningHandlerCalledWhenWarningLogAlreadyFull)
 {
-    
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
         RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
     }
     CHECK(!dummy_error_callback_called);
     set_warning_handler(dummy_callback_function);
     CHECK(dummy_error_callback_called);
+}
+
+TEST(RuntimeDiagnosticsTest, FirstErrorNotPrintedIfErrorFunctionNeverCalled)
+{
+    printf_first_runtime_error_entry();
+    fflush(stdout);
+    CHECK(is_test_file_empty());
 }
 
 TEST(RuntimeDiagnosticsTest, FirstErrorIsSavedFromErrorFunctionCall)
@@ -379,14 +410,97 @@ TEST(RuntimeDiagnosticsTest, RuntimeFunctionCallCountsAreKept)
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
     RUNTIME_TELEMETRY(0, "some_file.c: telemetry message", 0);
+
+    FILE *file{fopen(TEST_EXPECTATIONS_FILE, "w")};
+    CHECK(file != nullptr);
+
+    CHECK(fprintf(file, "telemetry: 3\r\n") > 0);
+    CHECK(fprintf(file, "warning: 2\r\n") > 0);
+    CHECK(fprintf(file, "error: 1\r\n") > 0);
+
+    fclose(file);
+
     printf_call_counts();
     fflush(stdout);
-    char buffer[64];
-    FILE* file{fopen(TEST_OUTPUT_FILE, "r")};
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "telemetry: 3\r\n") == 0);
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "warning: 2\r\n") == 0);
-    CHECK(fgets(buffer, sizeof(buffer), file));
-    CHECK(std::strcmp(buffer, "error: 1\r\n") == 0);
+
+    CHECK(test_output_and_expectation_are_identical());
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogInitialSizeIsZero)
+{
+    check_log_initial_size_is_zero(ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogSizeIncrementsCorrectly)
+{
+    add_n_entries_and_check_log_size(5u, 5u, ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, TelemetryLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(TELEMETRY_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, WarningLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(WARNING_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, ErrorLogSizeSaturatesAtCapacity)
+{
+    check_log_size_saturates_at_capacity(ERROR_LOG_INDEX);
+}
+
+TEST(RuntimeDiagnosticsTest, InitResetsAllLogSizesToZero)
+{
+    RUNTIME_TELEMETRY(0, "msg", 0);
+    RUNTIME_WARNING(0, "msg", 0);
+    RUNTIME_ERROR(0, "msg", 0);
+
+    CHECK(get_telemetry_log_current_size() > 0u);
+    CHECK(get_warning_log_current_size() > 0u);
+    CHECK(get_error_log_current_size() > 0u);
+
+    init_runtime_diagnostics();
+
+    CHECK_EQUAL(0u, get_telemetry_log_current_size());
+    CHECK_EQUAL(0u, get_warning_log_current_size());
+    CHECK_EQUAL(0u, get_error_log_current_size());
+}
+
+TEST(RuntimeDiagnosticsTest, DeinitResetsAllLogSizesToZero)
+{
+    RUNTIME_TELEMETRY(0, "msg", 0);
+    RUNTIME_WARNING(0, "msg", 0);
+    RUNTIME_ERROR(0, "msg", 0);
+
+    CHECK(get_telemetry_log_current_size() > 0u);
+    CHECK(get_warning_log_current_size() > 0u);
+    CHECK(get_error_log_current_size() > 0u);
+
+    deinit_runtime_diagnostics();
+
+    CHECK_EQUAL(0u, get_telemetry_log_current_size());
+    CHECK_EQUAL(0u, get_warning_log_current_size());
+    CHECK_EQUAL(0u, get_error_log_current_size());
 }

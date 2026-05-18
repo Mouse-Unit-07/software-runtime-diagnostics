@@ -20,6 +20,11 @@
 - Capacity
   - There's a hardcoded limit to the max number of log entries you can add per log category
   - These capacities can be modified in firmware as needed, but not at runtime
+- Log sizes:
+  - `get_telemetry_log_current_size()`
+  - `get_warning_log_current_size()`
+  - `get_error_log_current_size()`
+  - Primarily for checking whether the logs are empty
 - Overwriting
   - All logs are circular- old entries will be overwritten
   - The contents of the first `RUNTIME_ERROR()` call is saved separately
