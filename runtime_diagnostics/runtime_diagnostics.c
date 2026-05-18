@@ -8,11 +8,11 @@
 /*----------------------------------------------------------------------------*/
 /*                               Include Files                                */
 /*----------------------------------------------------------------------------*/
-#include <stdint.h>
-#include <string.h>
-#include <stdbool.h>
 #include <inttypes.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "runtime_diagnostics.h"
 
 /*----------------------------------------------------------------------------*/
@@ -43,11 +43,9 @@ enum log_category
 /*                         Private Function Prototypes                        */
 /*----------------------------------------------------------------------------*/
 static void reset_all_flags(void);
-static struct log_entry create_log_entry(uint32_t timestamp,
-                                         const char *fail_message,
+static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
                                          uint32_t fail_value);
-static void add_entry_to_circular_buffer(enum log_category log_index,
-                                         struct log_entry new_entry);
+static void add_entry_to_circular_buffer(enum log_category log_index, struct log_entry new_entry);
 static bool is_log_full(enum log_category log_index);
 static void save_entry_if_first_runtime_error(struct log_entry new_log);
 static void assert_runtime_error_flag(void);
@@ -56,36 +54,28 @@ static void call_error_handler_if_set(void);
 static void reset_log_entries(struct log_entry *entries, uint32_t entries_count);
 static void reset_circular_buffer(enum log_category log_index);
 static void reset_all_circular_buffers(void);
-static struct log_entry get_entry_at_index(enum log_category log_index,
-                                    uint32_t entry_index);
+static struct log_entry get_entry_at_index(enum log_category log_index, uint32_t entry_index);
 static void print_log_entry(struct log_entry entry);
 static void printf_log(enum log_category log_index);
 
 /*----------------------------------------------------------------------------*/
 /*                               Private Globals                              */
 /*----------------------------------------------------------------------------*/
-enum log_category log_category_array[LOG_CATEGORIES_COUNT] = {
-    TELEMETRY_LOG_INDEX, WARNING_LOG_INDEX, ERROR_LOG_INDEX
-};
+enum log_category log_category_array[LOG_CATEGORIES_COUNT] = {TELEMETRY_LOG_INDEX,
+                                                              WARNING_LOG_INDEX, ERROR_LOG_INDEX};
 
-const char *log_names_array[LOG_CATEGORIES_COUNT] = {
-    "telemetry", "warning", "error"
-};
+const char *log_names_array[LOG_CATEGORIES_COUNT] = {"telemetry", "warning", "error"};
 
 struct log_entry telemetry_entries[TELEMETRY_LOG_CAPACITY] = {{0}};
 struct log_entry warning_entries[WARNING_LOG_CAPACITY] = {{0}};
 struct log_entry error_entries[ERROR_LOG_CAPACITY] = {{0}};
 
-struct circular_buffer telemetry_cb \
-        = {telemetry_entries, TELEMETRY_LOG_CAPACITY, 0, 0};
-struct circular_buffer warning_cb \
-        = {warning_entries, WARNING_LOG_CAPACITY, 0, 0};
-struct circular_buffer error_cb \
-        = {error_entries, ERROR_LOG_CAPACITY, 0, 0};
+struct circular_buffer telemetry_cb = {telemetry_entries, TELEMETRY_LOG_CAPACITY, 0, 0};
+struct circular_buffer warning_cb = {warning_entries, WARNING_LOG_CAPACITY, 0, 0};
+struct circular_buffer error_cb = {error_entries, ERROR_LOG_CAPACITY, 0, 0};
 
-struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] = {
-    &telemetry_cb, &warning_cb, &error_cb
-};
+struct circular_buffer *circular_buffer_array[LOG_CATEGORIES_COUNT] = {&telemetry_cb, &warning_cb,
+                                                                       &error_cb};
 
 uint32_t call_counts_array[LOG_CATEGORIES_COUNT] = {0};
 
@@ -99,18 +89,15 @@ void (*user_error_handler)(void) = NULL;
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Definitions                        */
 /*----------------------------------------------------------------------------*/
-void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
-                       uint32_t fail_value)
+void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message, uint32_t fail_value)
 {
     add_entry_to_circular_buffer(TELEMETRY_LOG_INDEX,
         create_log_entry(timestamp, fail_message, fail_value));
 }
 
-void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
-                     uint32_t fail_value)
+void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message, uint32_t fail_value)
 {
-    struct log_entry new_entry = create_log_entry(
-        timestamp, fail_message, fail_value);
+    struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
     add_entry_to_circular_buffer(WARNING_LOG_INDEX, new_entry);
 
     if (is_log_full(WARNING_LOG_INDEX)) {
@@ -118,11 +105,9 @@ void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
     }
 }
 
-void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
-                   uint32_t fail_value)
+void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message, uint32_t fail_value)
 {
-    struct log_entry new_entry = create_log_entry(
-        timestamp, fail_message, fail_value);
+    struct log_entry new_entry = create_log_entry(timestamp, fail_message, fail_value);
     add_entry_to_circular_buffer(ERROR_LOG_INDEX, new_entry);
 
     save_entry_if_first_runtime_error(new_entry);
@@ -173,9 +158,7 @@ void printf_first_runtime_error_entry(void)
 void printf_call_counts(void)
 {
     for (uint32_t i = 0u; i < LOG_CATEGORIES_COUNT; i++) {
-        printf("%s: %" PRIu32 "\r\n",
-            log_names_array[i],
-            call_counts_array[i]);
+        printf("%s: %" PRIu32 "\r\n", log_names_array[i], call_counts_array[i]);
     }
 }
 
@@ -200,15 +183,13 @@ static void reset_all_flags(void)
     user_error_handler_set = false;
 }
 
-static struct log_entry create_log_entry(uint32_t timestamp,
-                                         const char *fail_message,
+static struct log_entry create_log_entry(uint32_t timestamp, const char *fail_message,
                                          uint32_t fail_value)
 {
     return (struct log_entry){timestamp, fail_message, fail_value};
 }
 
-static void add_entry_to_circular_buffer(enum log_category log_index,
-                                         struct log_entry new_entry)
+static void add_entry_to_circular_buffer(enum log_category log_index, struct log_entry new_entry)
 {
     call_counts_array[log_index]++;
 
@@ -223,8 +204,8 @@ static void add_entry_to_circular_buffer(enum log_category log_index,
 
 static bool is_log_full(enum log_category log_index)
 {
-    return circular_buffer_array[log_index]->log_capacity ==
-           circular_buffer_array[log_index]->current_size;
+    return circular_buffer_array[log_index]->log_capacity
+           == circular_buffer_array[log_index]->current_size;
 }
 
 static void save_entry_if_first_runtime_error(struct log_entry new_log)
@@ -273,22 +254,19 @@ static void reset_all_circular_buffers(void)
     }
 }
 
-static struct log_entry get_entry_at_index(enum log_category log_index,
-                                    uint32_t entry_index)
+static struct log_entry get_entry_at_index(enum log_category log_index, uint32_t entry_index)
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
-    uint32_t oldest_entry_index \
-        = (target_cb->head + target_cb->log_capacity - target_cb->current_size) \
+    uint32_t oldest_entry_index =
+        (target_cb->head + target_cb->log_capacity - target_cb->current_size)
         % target_cb->log_capacity;
-    uint32_t return_entry_index =
-        (oldest_entry_index + entry_index) % target_cb->log_capacity;
+    uint32_t return_entry_index = (oldest_entry_index + entry_index) % target_cb->log_capacity;
     return target_cb->log_entries[return_entry_index];
 }
 
 static void print_log_entry(struct log_entry entry)
 {
-    printf("%" PRIu32 " %s %" PRIu32 "\r\n", entry.timestamp,
-           entry.fail_message, entry.fail_value);
+    printf("%" PRIu32 " %s %" PRIu32 "\r\n", entry.timestamp, entry.fail_message, entry.fail_value);
 }
 
 static void printf_log(enum log_category log_index)

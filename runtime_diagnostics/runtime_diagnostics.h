@@ -20,12 +20,9 @@ enum
 /*----------------------------------------------------------------------------*/
 /*                         Public Function Prototypes                         */
 /*----------------------------------------------------------------------------*/
-void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value);
-void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value);
-void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message,
-        uint32_t fail_value);
+void RUNTIME_TELEMETRY(uint32_t timestamp, const char *fail_message, uint32_t fail_value);
+void RUNTIME_WARNING(uint32_t timestamp, const char *fail_message, uint32_t fail_value);
+void RUNTIME_ERROR(uint32_t timestamp, const char *fail_message, uint32_t fail_value);
 
 void set_warning_handler(void (*handler)(void));
 void set_error_handler(void (*handler)(void));

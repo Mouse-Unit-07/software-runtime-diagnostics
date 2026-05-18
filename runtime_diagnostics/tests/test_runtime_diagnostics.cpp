@@ -8,17 +8,20 @@
 /*============================================================================*/
 /*                               Include Files                                */
 /*============================================================================*/
-extern "C" {
-#include <stdint.h>
+extern "C"
+{
+
 #include <inttypes.h>
+#include <stdint.h>
 #include "runtime_diagnostics.h"
+
 }
 
+#include <CppUTest/TestHarness.h>
 #include <array>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <CppUTest/TestHarness.h>
 
 /*============================================================================*/
 /*                             Public Definitions                             */
@@ -37,18 +40,13 @@ enum log_category
     LOG_CATEGORIES_COUNT
 };
 
-void (*runtime_functions[])(
-        uint32_t timestamp, const char *fail_message, uint32_t fail_value){
-    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR
-};
+void (*runtime_functions[])(uint32_t timestamp, const char *fail_message, uint32_t fail_value) = {
+    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
-void (*print_functions[])(void){
-    printf_telemetry_log, printf_warning_log, printf_error_log
-};
+void (*print_functions[])(void) = {printf_telemetry_log, printf_warning_log, printf_error_log};
 
-uint32_t log_capacities_array[] = {
-    TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY, ERROR_LOG_CAPACITY
-};
+uint32_t log_capacities_array[] = {TELEMETRY_LOG_CAPACITY, WARNING_LOG_CAPACITY,
+                                   ERROR_LOG_CAPACITY};
 
 void redirect_stdout_to_file(void)
 {
@@ -94,7 +92,7 @@ bool is_test_file_empty(void)
 
 void clear_all_test_files(void)
 {
-    FILE* file{fopen(TEST_OUTPUT_FILE, "w")};
+    FILE *file{fopen(TEST_OUTPUT_FILE, "w")};
     CHECK(file != nullptr);
     fclose(file);
     file = fopen(TEST_EXPECTATIONS_FILE, "w");
@@ -102,11 +100,10 @@ void clear_all_test_files(void)
     fclose(file);
 }
 
-void add_log_entry_to_expectations_file(uint32_t timestamp,
-                                       const char* fail_message,
-                                       uint32_t fail_value)
+void add_log_entry_to_expectations_file(uint32_t timestamp, const char *fail_message,
+                                        uint32_t fail_value)
 {
-    FILE* file{fopen(TEST_EXPECTATIONS_FILE, "a")};
+    FILE *file{fopen(TEST_EXPECTATIONS_FILE, "a")};
     CHECK(file != nullptr);
 
     const int written = fprintf(
@@ -123,12 +120,16 @@ void add_log_entry_to_expectations_file(uint32_t timestamp,
 
 bool test_output_and_expectation_are_identical(void)
 {
-    FILE* a{fopen(TEST_OUTPUT_FILE, "rb")};
-    FILE* b{fopen(TEST_EXPECTATIONS_FILE, "rb")};
+    FILE *a{fopen(TEST_OUTPUT_FILE, "rb")};
+    FILE *b{fopen(TEST_EXPECTATIONS_FILE, "rb")};
 
     if (!a || !b) {
-        if (a) fclose(a);
-        if (b) fclose(b);
+        if (a) {
+            fclose(a);
+        }
+        if (b) {
+            fclose(b);
+        }
         return false;
     }
 
@@ -350,7 +351,6 @@ TEST(RuntimeDiagnosticsTest, FullWarningLogCallsHandlerWhenSet)
 
 TEST(RuntimeDiagnosticsTest, WarningHandlerCalledWhenWarningLogAlreadyFull)
 {
-    
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
         RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
     }
@@ -382,7 +382,7 @@ TEST(RuntimeDiagnosticsTest, RuntimeFunctionCallCountsAreKept)
     printf_call_counts();
     fflush(stdout);
     char buffer[64];
-    FILE* file{fopen(TEST_OUTPUT_FILE, "r")};
+    FILE *file{fopen(TEST_OUTPUT_FILE, "r")};
     CHECK(fgets(buffer, sizeof(buffer), file));
     CHECK(std::strcmp(buffer, "telemetry: 3\r\n") == 0);
     CHECK(fgets(buffer, sizeof(buffer), file));
