@@ -71,7 +71,7 @@ bool is_test_file_empty(void)
         return true;
     }
 
-    const long current = ftell(file);
+    const long current{ftell(file)};
     if (current < 0) {
         return false; // ftell failed
     }
@@ -80,7 +80,7 @@ bool is_test_file_empty(void)
         return false;
     }
 
-    const long size = ftell(file);
+    const long size{ftell(file)};
 
     // Restore position
     fseek(file, current, SEEK_SET);
@@ -108,8 +108,8 @@ void add_log_entry_to_expectations_file(uint32_t timestamp, const char *fail_mes
     FILE *file{fopen(TEST_EXPECTATIONS_FILE, "a")};
     CHECK(file != nullptr);
 
-    const int written =
-            fprintf(file, "%" PRIu32 " %s %" PRIu32 "\r\n", timestamp, fail_message, fail_value);
+    const int written{
+            fprintf(file, "%" PRIu32 " %s %" PRIu32 "\r\n", timestamp, fail_message, fail_value)};
 
     CHECK(written > 0);
     fclose(file);
@@ -134,8 +134,8 @@ bool test_output_and_expectation_are_identical(void)
     std::array<std::uint8_t, 4096> buf_b{};
 
     while (true) {
-        const size_t read_a = fread(buf_a.data(), 1, buf_a.size(), a);
-        const size_t read_b = fread(buf_b.data(), 1, buf_b.size(), b);
+        const size_t read_a{fread(buf_a.data(), 1, buf_a.size(), a)};
+        const size_t read_b{fread(buf_b.data(), 1, buf_b.size(), b)};
 
         if (read_a != read_b) {
             fclose(a);
@@ -224,7 +224,7 @@ void overflow_by_n_entries_and_check(uint32_t n, enum log_category index)
 
 void check_log_initial_size_is_zero(enum log_category index)
 {
-    CHECK_EQUAL(0u, get_log_current_size_functions[index]());
+    LONGS_EQUAL(0u, get_log_current_size_functions[index]());
 }
 
 void add_n_entries_and_check_log_size(uint32_t n, uint32_t expected_size, enum log_category index)
@@ -233,7 +233,7 @@ void add_n_entries_and_check_log_size(uint32_t n, uint32_t expected_size, enum l
         runtime_functions[index](i, "some_file.c: some msg", i + 1);
     }
 
-    CHECK_EQUAL(expected_size, get_log_current_size_functions[index]());
+    LONGS_EQUAL(expected_size, get_log_current_size_functions[index]());
 }
 
 void check_log_size_saturates_at_capacity(enum log_category index)
@@ -354,7 +354,7 @@ TEST(RuntimeDiagnosticsTest, ErrorRuntimeFunctionCallsHandlerWhenSet)
 TEST(RuntimeDiagnosticsTest, ErrorHandlerCalledWhenErrorAlreadyAsserted)
 {
     RUNTIME_ERROR(1, "some_file.c: error message", 2);
-    CHECK(!dummy_error_callback_called);
+    CHECK_FALSE(dummy_error_callback_called);
     set_error_handler(dummy_callback_function);
     CHECK(dummy_error_callback_called);
 }
@@ -373,7 +373,7 @@ TEST(RuntimeDiagnosticsTest, WarningHandlerCalledWhenWarningLogAlreadyFull)
     for (uint32_t i{0u}; i < WARNING_LOG_CAPACITY; i++) {
         RUNTIME_WARNING(i, "some_file.c: warning msg", i + 1);
     }
-    CHECK(!dummy_error_callback_called);
+    CHECK_FALSE(dummy_error_callback_called);
     set_warning_handler(dummy_callback_function);
     CHECK(dummy_error_callback_called);
 }
@@ -478,9 +478,9 @@ TEST(RuntimeDiagnosticsTest, InitResetsAllLogSizesToZero)
 
     init_runtime_diagnostics();
 
-    CHECK_EQUAL(0u, get_telemetry_log_current_size());
-    CHECK_EQUAL(0u, get_warning_log_current_size());
-    CHECK_EQUAL(0u, get_error_log_current_size());
+    LONGS_EQUAL(0u, get_telemetry_log_current_size());
+    LONGS_EQUAL(0u, get_warning_log_current_size());
+    LONGS_EQUAL(0u, get_error_log_current_size());
 }
 
 TEST(RuntimeDiagnosticsTest, DeinitResetsAllLogSizesToZero)
@@ -495,7 +495,7 @@ TEST(RuntimeDiagnosticsTest, DeinitResetsAllLogSizesToZero)
 
     deinit_runtime_diagnostics();
 
-    CHECK_EQUAL(0u, get_telemetry_log_current_size());
-    CHECK_EQUAL(0u, get_warning_log_current_size());
-    CHECK_EQUAL(0u, get_error_log_current_size());
+    LONGS_EQUAL(0u, get_telemetry_log_current_size());
+    LONGS_EQUAL(0u, get_warning_log_current_size());
+    LONGS_EQUAL(0u, get_error_log_current_size());
 }
