@@ -41,10 +41,10 @@ enum log_category
 };
 
 void (*runtime_functions[])(uint32_t timestamp, const char *fail_message, uint32_t fail_value) = {
-    RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
+        RUNTIME_TELEMETRY, RUNTIME_WARNING, RUNTIME_ERROR};
 
 uint32_t (*get_log_current_size_functions[])(void) = {
-    get_telemetry_log_current_size, get_warning_log_current_size, get_error_log_current_size};
+        get_telemetry_log_current_size, get_warning_log_current_size, get_error_log_current_size};
 
 void (*print_functions[])(void) = {printf_telemetry_log, printf_warning_log, printf_error_log};
 
@@ -108,13 +108,8 @@ void add_log_entry_to_expectations_file(uint32_t timestamp, const char *fail_mes
     FILE *file{fopen(TEST_EXPECTATIONS_FILE, "a")};
     CHECK(file != nullptr);
 
-    const int written = fprintf(
-        file,
-        "%" PRIu32 " %s %" PRIu32 "\r\n",
-        timestamp,
-        fail_message,
-        fail_value
-    );
+    const int written =
+            fprintf(file, "%" PRIu32 " %s %" PRIu32 "\r\n", timestamp, fail_message, fail_value);
 
     CHECK(written > 0);
     fclose(file);
