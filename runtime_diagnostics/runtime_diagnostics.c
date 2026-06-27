@@ -286,8 +286,8 @@ static struct log_entry get_entry_at_index(enum log_category log_index, uint32_t
 {
     struct circular_buffer *target_cb = circular_buffer_array[log_index];
     uint32_t oldest_entry_index =
-        (target_cb->head + target_cb->log_capacity - target_cb->current_size)
-        % target_cb->log_capacity;
+            (target_cb->head + target_cb->log_capacity - target_cb->current_size)
+            % target_cb->log_capacity;
     uint32_t return_entry_index = (oldest_entry_index + entry_index) % target_cb->log_capacity;
     return target_cb->log_entries[return_entry_index];
 }
